@@ -14,17 +14,15 @@ const app = express();
 
 connectDB();
 
-
+// CORS
 const allowedOrigins = [
     "http://localhost:5173",
     "https://smart-attendance-cu.vercel.app"
 ];
 
-
 app.use(
     cors({
         origin: function (origin, callback) {
-
             if (!origin) {
                 return callback(null, true);
             }
@@ -33,11 +31,8 @@ app.use(
                 return callback(null, true);
             }
 
-            return callback(
-                new Error("Not allowed by CORS")
-            );
+            return callback(new Error("Not allowed by CORS"));
         },
-
         methods: [
             "GET",
             "POST",
@@ -45,40 +40,29 @@ app.use(
             "DELETE",
             "OPTIONS"
         ],
-
         allowedHeaders: [
             "Content-Type",
             "Authorization"
         ],
-
         credentials: false
     })
 );
 
-
-app.use(express.json());
-
+// IMPORTANT: QR payload can be large
+app.use(express.json({ limit: "10mb" }));
 
 app.get("/", (req, res) => {
-
     res.json({
         status: "success",
         message: "Smart Attendance Backend is running"
     });
-
 });
 
-
 app.use("/api/auth", authRoutes);
-
 app.use("/api/admin", adminRoutes);
-
 app.use("/api/teacher", teacherRoutes);
 
-
-const PORT =
-    process.env.PORT || 5000;
-
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
