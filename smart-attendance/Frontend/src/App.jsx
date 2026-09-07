@@ -12,8 +12,10 @@ import {
 import {
     fetchStudents,
     createSession,
+    sendEmails,
     markPresent,
-    finalizeDay
+    finalizeDay,
+    getAttendanceStatus
 } from "./services/api";
 
 import "./App.css";
@@ -138,6 +140,9 @@ function App() {
     const [finalized, setFinalized] =
         useState(false);
 
+    const [attendanceSummary, setAttendanceSummary] =
+        useState(null);
+
 
     // =========================
     // COUNTS
@@ -227,6 +232,7 @@ function App() {
         setScannerOpen(false);
         setScanHistory([]);
         setFinalized(false);
+        setAttendanceSummary(null);
         setMessage("");
         setClassError("");
     };
@@ -251,6 +257,7 @@ function App() {
         setScannerOpen(false);
         setScanHistory([]);
         setFinalized(false);
+        setAttendanceSummary(null);
         setMessage("");
     };
 
@@ -277,40 +284,69 @@ function App() {
             setMessage("");
 
 
-            const result =
-                await fetchStudents(
-                    className
-                );
+            // Load the roster and today's existing attendance
+            // independently from the Google Sheet.
+            const [studentsResult, statusResult] =
+                await Promise.all([
+                    fetchStudents(className),
+                    getAttendanceStatus(className)
+                ]);
+
+
+            const attendanceMap = new Map(
+                (statusResult.students || []).map(student => [
+                    String(student.roll).trim(),
+                    student.status || "PENDING"
+                ])
+            );
 
 
             const formatted =
-                (result.students || []).map(
-                    student => ({
-                        ...student,
-                        status: "PENDING"
-                    })
-                );
+                (studentsResult.students || []).map(student => ({
+                    ...student,
+                    status:
+                        attendanceMap.get(
+                            String(student.roll).trim()
+                        ) || "PENDING"
+                }));
 
 
             setStudents(formatted);
+            setAttendanceSummary(statusResult);
+
+
+            // The sheet is the source of truth. If today's
+            // attendance is already finalized, keep the page
+            // read-only until another date is used.
+            setFinalized(Boolean(statusResult.finalized));
+
 
             setSession(null);
             setScannerOpen(false);
             setScanHistory([]);
-            setFinalized(false);
 
 
-            setMessage(
-                `${formatted.length} students loaded successfully.`
-            );
+            if (statusResult.finalized) {
+
+                setMessage(
+                    `Today's attendance is already finalized. Present: ${statusResult.present}, Absent: ${statusResult.absent}.`
+                );
+
+            } else {
+
+                setMessage(
+                    `${formatted.length} students loaded. Present: ${statusResult.present}, Absent: ${statusResult.absent}, Pending: ${statusResult.pending}.`
+                );
+            }
 
 
         } catch (error) {
 
             console.error(
-                "Fetch students error:",
+                "Fetch students/attendance status error:",
                 error
             );
+
 
             setMessage(
                 `❌ ${error.message}`
@@ -334,6 +370,15 @@ function App() {
 
             setMessage(
                 "Please load student details first."
+            );
+
+            return;
+        }
+
+        if (finalized) {
+
+            setMessage(
+                "Today's attendance has already been finalized."
             );
 
             return;
@@ -434,6 +479,18 @@ function App() {
                             : student
                     )
                 );
+
+                setAttendanceSummary(previous => previous ? ({
+                    ...previous,
+                    present: Math.min(
+                        previous.total,
+                        (previous.present || 0) + 1
+                    ),
+                    pending: Math.max(
+                        0,
+                        (previous.pending || 0) - 1
+                    )
+                }) : previous);
 
 
                 // Add scan history
@@ -553,6 +610,14 @@ function App() {
 
                 }))
             );
+
+            setAttendanceSummary(previous => previous ? ({
+                ...previous,
+                present: result.present,
+                absent: result.absent,
+                pending: 0,
+                finalized: true
+            }) : previous);
 
 
             setMessage(
@@ -969,7 +1034,7 @@ if (!teacher) {
                                 </span>
 
                                 <strong>
-                                    {students.length}
+                                    {attendanceSummary?.total ?? students.length}
                                 </strong>
 
                             </div>
@@ -990,7 +1055,7 @@ if (!teacher) {
                                 </span>
 
                                 <strong>
-                                    {presentCount}
+                                    {attendanceSummary?.present ?? presentCount}
                                 </strong>
 
                             </div>
@@ -1011,7 +1076,7 @@ if (!teacher) {
                                 </span>
 
                                 <strong>
-                                    {pendingCount}
+                                    {attendanceSummary?.pending ?? pendingCount}
                                 </strong>
 
                             </div>
@@ -1032,7 +1097,7 @@ if (!teacher) {
                                 </span>
 
                                 <strong>
-                                    {absentCount}
+                                    {attendanceSummary?.absent ?? absentCount}
                                 </strong>
 
                             </div>
@@ -1048,7 +1113,7 @@ if (!teacher) {
                     ATTENDANCE SESSION
                 ========================= */}
 
-                {students.length > 0 && (
+                {students.length > 0 && !finalized && (
 
                     <section className="card">
 
@@ -1310,6 +1375,21 @@ if (!teacher) {
 
                         {message}
 
+                    </div>
+
+                )}
+
+
+                {/* =========================
+                    FINALIZED STATUS BANNER
+                ========================= */}
+
+                {students.length > 0 && finalized && (
+
+                    <div className="success-message">
+                        🔒 Today's attendance is finalized.
+                        The status below is loaded directly
+                        from the attendance sheet.
                     </div>
 
                 )}
