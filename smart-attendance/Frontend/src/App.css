@@ -237,14 +237,18 @@ button:disabled{cursor:not-allowed;opacity:.5}
 .attendance-progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--green));border-radius:100px;transition:width .4s ease}
 
 .table-heading{margin-bottom:14px}
-.table-container{width:100%;overflow-x:auto;border:1px solid var(--border);border-radius:8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
-table{width:100%;border-collapse:collapse;min-width:580px}
-thead{background:var(--bg)}
-th{padding:10px 16px;text-align:left;font-size:9px;letter-spacing:.6px;font-weight:700;color:var(--text-4);text-transform:uppercase;border-bottom:1px solid var(--border)}
-td{padding:12px 16px;font-size:12px;font-weight:500;color:var(--text-2);border-bottom:1px solid var(--border-light)}
+.table-container{width:100%;max-height:420px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);border-radius:8px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;-webkit-overflow-scrolling:touch}
+.table-container::-webkit-scrollbar{width:6px;height:6px}
+.table-container::-webkit-scrollbar-track{background:transparent}
+.table-container::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.table-container::-webkit-scrollbar-thumb:hover{background:var(--text-4)}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:580px}
+thead{position:sticky;top:0;z-index:3}
+th{position:sticky;top:0;z-index:3;background:var(--bg);padding:10px 16px;text-align:left;font-size:9px;letter-spacing:.6px;font-weight:700;color:var(--text-4);text-transform:uppercase;border-bottom:1px solid var(--border);box-shadow:0 1px 0 var(--border)}
+td{padding:12px 16px;font-size:12px;font-weight:500;color:var(--text-2);border-bottom:1px solid var(--border-light);background:var(--card)}
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover{background:rgba(13,148,136,.02)}
-.empty-table-msg{text-align:center;padding:24px 16px!important;color:var(--text-4);font-style:italic}
+tbody tr:hover td{background:rgba(13,148,136,.03)}
+.empty-table-msg{text-align:center;padding:24px 16px!important;color:var(--text-4);font-style:italic;background:var(--card)}
 .email-cell{color:var(--text-4)}
 .status-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.1px}
 .status-badge.present{background:var(--green-bg);color:#166534}
