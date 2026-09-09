@@ -1,524 +1,154 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Html5Qrcode,
-  Html5QrcodeSupportedFormats
-} from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 
 export default function QRScanner({ onScan }) {
-
   const scannerRef = useRef(null);
-
   const mountedRef = useRef(true);
-
   const startingRef = useRef(false);
-
   const scanningRef = useRef(false);
-
   const processingRef = useRef(false);
-
-  /**
-   * OPTIMIZED: Track already-scanned roll numbers
-   * to instantly reject duplicates without hitting the backend.
-   */
   const scannedRollsRef = useRef(new Set());
 
   const [error, setError] = useState("");
-
   const [success, setSuccess] = useState("");
 
-
   useEffect(() => {
-
     mountedRef.current = true;
-
-    const elementId =
-      "attendance-qr-reader";
-
+    const elementId = "attendance-qr-reader";
 
     async function startScanner() {
-
-      if (startingRef.current) {
-        return;
-      }
-
+      if (startingRef.current) return;
       startingRef.current = true;
 
-
       try {
+        const el = document.getElementById(elementId);
+        if (!el) throw new Error("Scanner container not found.");
+        el.innerHTML = "";
 
-        const element =
-          document.getElementById(elementId);
+        const scanner = new Html5Qrcode(elementId, {
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+          verbose: false,
+        });
+        scannerRef.current = scanner;
 
-
-        if (!element) {
-
-          throw new Error(
-            "Scanner container was not found."
-          );
-        }
-
-
-        element.innerHTML = "";
-
-
-        const scanner =
-          new Html5Qrcode(
-            elementId,
-            {
-              formatsToSupport: [
-                Html5QrcodeSupportedFormats.QR_CODE
-              ],
-
-              verbose: false
-            }
-          );
-
-
-        scannerRef.current =
-          scanner;
-
-
-        if (!mountedRef.current) {
-          return;
-        }
-
+        if (!mountedRef.current) return;
 
         await scanner.start(
-
-          {
-            facingMode:
-              "environment"
-          },
-
-          {
-            // OPTIMIZED: Increased FPS from 10 to 15
-            fps: 15,
-
-            qrbox: {
-              width: 250,
-              height: 250
-            },
-
-            aspectRatio: 1.0,
-
-            disableFlip: false
-          },
-
+          { facingMode: "environment" },
+          { fps: 15, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0, disableFlip: false },
 
           async (decodedText) => {
-
-            /*
-             * Prevent the same QR from
-             * being processed multiple times.
-             */
-            if (
-              processingRef.current
-            ) {
-              return;
-            }
-
-
-            processingRef.current =
-              true;
-
+            if (processingRef.current) return;
+            processingRef.current = true;
 
             try {
-
               let qrData;
-
-
               try {
-
-                qrData =
-                  JSON.parse(
-                    decodedText
-                  );
-
+                qrData = JSON.parse(decodedText);
               } catch {
-
-                if (
-                  mountedRef.current
-                ) {
-
-                  setError(
-                    "❌ Invalid attendance QR code."
-                  );
-
-                  setSuccess("");
-                }
-
+                if (mountedRef.current) { setError("Invalid QR code format."); setSuccess(""); }
                 return;
               }
 
-
-              /*
-               * Validate QR data.
-               */
-              if (
-                !qrData.className ||
-                !qrData.rollNumber ||
-                !qrData.date ||
-                !qrData.sessionId
-              ) {
-
-                if (
-                  mountedRef.current
-                ) {
-
-                  setError(
-                    "❌ This is not a valid attendance QR code."
-                  );
-
-                  setSuccess("");
-                }
-
+              if (!qrData.className || !qrData.rollNumber || !qrData.date || !qrData.sessionId) {
+                if (mountedRef.current) { setError("Not a valid attendance QR."); setSuccess(""); }
                 return;
               }
 
-
-              /*
-               * OPTIMIZED: Skip already-scanned roll numbers
-               * instantly — no backend call needed.
-               */
               const rollKey = String(qrData.rollNumber).trim();
-
               if (scannedRollsRef.current.has(rollKey)) {
-
                 if (mountedRef.current) {
-
                   setError("");
-
-                  setSuccess(
-                    `✅ Roll No. ${qrData.rollNumber} — Already marked present`
-                  );
+                  setSuccess(`Roll ${qrData.rollNumber} — Already marked ✓`);
                 }
-
-                // Short cooldown for duplicate
-                setTimeout(() => {
-                  processingRef.current = false;
-                }, 500);
-
+                setTimeout(() => { processingRef.current = false; }, 500);
                 return;
               }
 
+              if (mountedRef.current) { setError(""); setSuccess("Verifying..."); }
 
-              if (
-                mountedRef.current
-              ) {
-
-                setError("");
-
-                setSuccess(
-                  "⏳ Verifying attendance..."
-                );
-              }
-
-
-              /*
-               * Send QR data to App.jsx.
-               *
-               * IMPORTANT:
-               * onScan must throw an error if
-               * attendance was NOT marked.
-               */
               await onScan(qrData);
-
-
-              /*
-               * If onScan completes successfully,
-               * the backend has confirmed attendance.
-               * Track this roll number.
-               */
               scannedRollsRef.current.add(rollKey);
 
-
-              if (
-                mountedRef.current
-              ) {
-
+              if (mountedRef.current) {
                 setError("");
-
-                setSuccess(
-                  `✅ Attendance Marked Successfully — Roll No. ${qrData.rollNumber}`
-                );
+                setSuccess(`Roll ${qrData.rollNumber} — Marked Present ✓`);
               }
 
-
-              /*
-               * Automatically remove the
-               * success message after 4 seconds.
-               */
-              setTimeout(() => {
-
-                if (
-                  mountedRef.current
-                ) {
-
-                  setSuccess("");
-                }
-
-              }, 4000);
-
-
+              setTimeout(() => { if (mountedRef.current) setSuccess(""); }, 4000);
             } catch (err) {
-
-              console.error(
-                "QR processing error:",
-                err
-              );
-
-
-              if (
-                mountedRef.current
-              ) {
-
-                setSuccess("");
-
-                setError(
-                  err.message ||
-                  "Unable to mark attendance."
-                );
-              }
-
-
+              if (mountedRef.current) { setSuccess(""); setError(err.message || "Scan failed."); }
             } finally {
-
-              /*
-               * OPTIMIZED: Reduced cooldown from 1500ms to 800ms
-               * for faster scanning between students.
-               */
-              setTimeout(() => {
-
-                processingRef.current =
-                  false;
-
-              }, 800);
+              setTimeout(() => { processingRef.current = false; }, 800);
             }
-
           },
-
-          () => {
-            /*
-             * QR not detected.
-             *
-             * This is normal.
-             */
-          }
-
+          () => {}
         );
 
-
-        scanningRef.current =
-          true;
-
-
-        console.log(
-          "QR scanner started successfully."
-        );
-
-
+        scanningRef.current = true;
       } catch (err) {
-
-        console.error(
-          "QR scanner startup error:",
-          err
-        );
-
-
-        scanningRef.current =
-          false;
-
-
-        if (
-          mountedRef.current
-        ) {
-
-          if (
-            err.name ===
-            "NotAllowedError"
-          ) {
-
-            setError(
-              "❌ Camera permission denied. Please allow camera access."
-            );
-
-          } else {
-
-            setError(
-              err.message ||
-              "Unable to start the camera."
-            );
-          }
+        scanningRef.current = false;
+        if (mountedRef.current) {
+          setError(
+            err.name === "NotAllowedError"
+              ? "Camera permission denied. Please allow access."
+              : err.message || "Unable to start camera."
+          );
         }
-
-
       } finally {
-
-        startingRef.current =
-          false;
+        startingRef.current = false;
       }
     }
 
+    const timer = setTimeout(() => { if (mountedRef.current) startScanner(); }, 150);
 
-    /*
-     * Give the DOM time to render.
-     */
-    const timer =
-      setTimeout(() => {
-
-        if (
-          mountedRef.current
-        ) {
-
-          startScanner();
-        }
-
-      }, 150);
-
-
-    /*
-     * Cleanup.
-     */
     return () => {
-
-      mountedRef.current =
-        false;
-
-
+      mountedRef.current = false;
       clearTimeout(timer);
+      const scanner = scannerRef.current;
+      scannerRef.current = null;
 
-
-      const scanner =
-        scannerRef.current;
-
-
-      scannerRef.current =
-        null;
-
-
-      if (
-        scanner &&
-        scanningRef.current
-      ) {
-
-        scanner
-          .stop()
-          .then(() => {
-
-            try {
-
-              scanner.clear();
-
-            } catch (e) {
-
-              console.warn(
-                "Scanner clear warning:",
-                e
-              );
-            }
-
-          })
-          .catch((err) => {
-
-            console.warn(
-              "Scanner stop warning:",
-              err
-            );
-
-            try {
-
-              scanner.clear();
-
-            } catch (e) {
-              // Ignore cleanup errors.
-            }
-          });
-
-
-        scanningRef.current =
-          false;
+      if (scanner && scanningRef.current) {
+        scanner.stop()
+          .then(() => { try { scanner.clear(); } catch {} })
+          .catch(() => { try { scanner.clear(); } catch {} });
+        scanningRef.current = false;
       }
-
     };
-
   }, [onScan]);
 
-
   return (
-
     <div className="scanner-wrapper">
 
-
-      {/* =================================================
-          SUCCESS MESSAGE
-          ================================================= */}
-
       {success && (
-
         <div className="scanner-success">
-
-          <div className="success-icon">
-            ✓
-          </div>
-
+          <div className="success-icon">✓</div>
           <div className="success-content">
-
-            <strong>
-              {success}
-            </strong>
-
-            <span>
-              The attendance has been
-              recorded in the sheet.
-            </span>
-
+            <strong>{success}</strong>
+            <span>Recorded in the attendance sheet</span>
           </div>
-
         </div>
       )}
 
+      {error && <div className="scanner-error">⚠ {error}</div>}
 
-      {/* =================================================
-          ERROR MESSAGE
-          ================================================= */}
+      <div style={{ position: "relative" }}>
+        <div id="attendance-qr-reader" className="qr-reader" />
 
-      {error && (
-
-        <div className="scanner-error">
-
-          {error}
-
+        {/* Scan overlay with animated line + corner markers */}
+        <div className="scanner-overlay">
+          <div className="scan-frame">
+            <div className="scan-corner-bl" />
+            <div className="scan-corner-br" />
+            <div className="scan-line" />
+          </div>
         </div>
-      )}
-
-
-      {/* =================================================
-          CAMERA
-          ================================================= */}
-
-      <div
-        id="attendance-qr-reader"
-        className="qr-reader"
-      />
-
-
-      {/* =================================================
-          INSTRUCTIONS
-          ================================================= */}
-
-      <div className="scanner-instruction">
-
-        <strong>
-          Scan Student QR
-        </strong>
-
-        <span>
-          Place the QR code inside
-          the scanning box.
-        </span>
-
       </div>
 
+      <div className="scanner-instruction">
+        <strong>Point at student's QR code</strong>
+        <span>Hold steady — it scans automatically</span>
+      </div>
     </div>
   );
 }
