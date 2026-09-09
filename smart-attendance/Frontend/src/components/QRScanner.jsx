@@ -16,6 +16,12 @@ export default function QRScanner({ onScan }) {
 
   const processingRef = useRef(false);
 
+  /**
+   * OPTIMIZED: Track already-scanned roll numbers
+   * to instantly reject duplicates without hitting the backend.
+   */
+  const scannedRollsRef = useRef(new Set());
+
   const [error, setError] = useState("");
 
   const [success, setSuccess] = useState("");
@@ -85,7 +91,8 @@ export default function QRScanner({ onScan }) {
           },
 
           {
-            fps: 10,
+            // OPTIMIZED: Increased FPS from 10 to 15
+            fps: 15,
 
             qrbox: {
               width: 250,
@@ -116,12 +123,6 @@ export default function QRScanner({ onScan }) {
 
 
             try {
-
-              console.log(
-                "QR DETECTED:",
-                decodedText
-              );
-
 
               let qrData;
 
@@ -175,6 +176,32 @@ export default function QRScanner({ onScan }) {
               }
 
 
+              /*
+               * OPTIMIZED: Skip already-scanned roll numbers
+               * instantly — no backend call needed.
+               */
+              const rollKey = String(qrData.rollNumber).trim();
+
+              if (scannedRollsRef.current.has(rollKey)) {
+
+                if (mountedRef.current) {
+
+                  setError("");
+
+                  setSuccess(
+                    `✅ Roll No. ${qrData.rollNumber} — Already marked present`
+                  );
+                }
+
+                // Short cooldown for duplicate
+                setTimeout(() => {
+                  processingRef.current = false;
+                }, 500);
+
+                return;
+              }
+
+
               if (
                 mountedRef.current
               ) {
@@ -200,7 +227,11 @@ export default function QRScanner({ onScan }) {
               /*
                * If onScan completes successfully,
                * the backend has confirmed attendance.
+               * Track this roll number.
                */
+              scannedRollsRef.current.add(rollKey);
+
+
               if (
                 mountedRef.current
               ) {
@@ -253,14 +284,15 @@ export default function QRScanner({ onScan }) {
             } finally {
 
               /*
-               * Small cooldown.
+               * OPTIMIZED: Reduced cooldown from 1500ms to 800ms
+               * for faster scanning between students.
                */
               setTimeout(() => {
 
                 processingRef.current =
                   false;
 
-              }, 1500);
+              }, 800);
             }
 
           },

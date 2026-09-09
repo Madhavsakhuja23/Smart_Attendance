@@ -2,7 +2,17 @@ const BACKEND_URL =
     import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 
-async function request(action, data = {}) {
+const DEFAULT_TIMEOUT = 20000; // 20 seconds
+
+
+/**
+ * In-flight request deduplication.
+ * Prevents the same action from being fired multiple times simultaneously.
+ */
+const inflightRequests = new Map();
+
+
+async function request(action, data = {}, options = {}) {
 
     const token = sessionStorage.getItem("token");
 
@@ -10,40 +20,82 @@ async function request(action, data = {}) {
         throw new Error("Please login first.");
     }
 
-    const response = await fetch(
-        `${BACKEND_URL}/api/teacher/attendance`,
-        {
-            method: "POST",
+    // Dedup — same action + same className = same request
+    const dedupKey = options.dedup
+        ? `${action}:${data.className || ""}`
+        : null;
 
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            },
-
-            body: JSON.stringify({
-                action,
-                ...data
-            })
-        }
-    );
-
-
-    const result = await response.json();
-
-
-    if (!response.ok || result.status === "error") {
-
-        const error = new Error(
-            result.message || "Request failed."
-        );
-
-        error.code = result.code;
-
-        throw error;
+    if (dedupKey && inflightRequests.has(dedupKey)) {
+        return inflightRequests.get(dedupKey);
     }
 
+    const promise = (async () => {
+        // AbortController — fail after timeout
+        const controller = new AbortController();
 
-    return result;
+        const timeout = setTimeout(
+            () => controller.abort(),
+            options.timeout || DEFAULT_TIMEOUT
+        );
+
+        try {
+            const response = await fetch(
+                `${BACKEND_URL}/api/teacher/attendance`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`
+                    },
+
+                    body: JSON.stringify({
+                        action,
+                        ...data
+                    }),
+
+                    signal: controller.signal
+                }
+            );
+
+            const result = await response.json();
+
+            if (!response.ok || result.status === "error") {
+
+                const error = new Error(
+                    result.message || "Request failed."
+                );
+
+                error.code = result.code;
+
+                throw error;
+            }
+
+            return result;
+
+        } catch (error) {
+            if (error.name === "AbortError") {
+                throw new Error(
+                    "Request timed out. Please try again."
+                );
+            }
+
+            throw error;
+
+        } finally {
+            clearTimeout(timeout);
+
+            if (dedupKey) {
+                inflightRequests.delete(dedupKey);
+            }
+        }
+    })();
+
+    if (dedupKey) {
+        inflightRequests.set(dedupKey, promise);
+    }
+
+    return promise;
 }
 
 
@@ -51,7 +103,7 @@ async function request(action, data = {}) {
 export function fetchStudents(className) {
     return request("fetchStudents", {
         className
-    });
+    }, { dedup: true });
 }
 
 
@@ -111,5 +163,5 @@ export function finalizeDay({
 export function getAttendanceStatus(className) {
     return request("getAttendanceStatus", {
         className
-    });
+    }, { dedup: true });
 }

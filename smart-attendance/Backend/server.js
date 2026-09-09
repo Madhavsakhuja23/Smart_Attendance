@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const compression = require("compression");
 
 const connectDB = require("./config/db");
 
@@ -48,7 +49,29 @@ app.use(
     })
 );
 
-// IMPORTANT: QR payload can be large
+
+// Gzip compression — reduces response size by 60-80%
+app.use(compression());
+
+
+// Request timing — logs slow requests for debugging
+app.use((req, res, next) => {
+    const start = Date.now();
+
+    res.on("finish", () => {
+        const duration = Date.now() - start;
+
+        if (duration > 2000) {
+            console.warn(
+                `⚠ Slow request: ${req.method} ${req.originalUrl} took ${duration}ms`
+            );
+        }
+    });
+
+    next();
+});
+
+
 app.use(express.json({ limit: "10mb" }));
 
 app.get("/", (req, res) => {

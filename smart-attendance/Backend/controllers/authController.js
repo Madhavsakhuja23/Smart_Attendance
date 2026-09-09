@@ -48,9 +48,11 @@ const loginTeacher = async (req, res) => {
             });
         }
 
-        // Update login time
+        // Update login time (fire-and-forget — don't wait for save)
         teacher.lastLoginAt = new Date();
-        await teacher.save();
+        teacher.save().catch((err) => {
+            console.error("Failed to update lastLoginAt:", err.message);
+        });
 
         // Create JWT
         const token = jwt.sign(
@@ -90,8 +92,6 @@ const loginTeacher = async (req, res) => {
 
 const getProfile = async (req, res) => {
     try {
-        const Teacher = require("../models/Teacher");
-
         const teacher = await Teacher.findOne({
             teacherId: req.teacher.teacherId
         }).select("-passwordHash");
