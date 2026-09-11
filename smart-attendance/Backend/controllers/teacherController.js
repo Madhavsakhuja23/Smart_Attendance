@@ -77,15 +77,15 @@ const getTeacher = async (teacherId) => {
 
 const APPS_SCRIPT_TIMEOUT = 25000; // 25 seconds
 
-const callAppsScript = async (teacherId, action, data = {}) => {
+const callAppsScript = async (teacherId, action, data = {}, timeoutMs) => {
     const teacher = await getTeacher(teacherId);
 
-    // AbortController — fail after 25s instead of hanging forever
+    // AbortController — fail after timeout instead of hanging forever
     const controller = new AbortController();
 
     const timeout = setTimeout(
         () => controller.abort(),
-        APPS_SCRIPT_TIMEOUT
+        timeoutMs || APPS_SCRIPT_TIMEOUT
     );
 
     try {
@@ -197,10 +197,14 @@ const attendanceAction = async (req, res) => {
             });
         }
 
+        // sendEmails carries all QR base64 images — needs a longer timeout
+        const timeout = action === "sendEmails" ? 55000 : APPS_SCRIPT_TIMEOUT;
+
         const result = await callAppsScript(
             req.teacher.teacherId,
             action,
-            data
+            data,
+            timeout
         );
 
         if (result.status === "error") {

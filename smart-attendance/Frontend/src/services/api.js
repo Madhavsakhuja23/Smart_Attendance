@@ -126,7 +126,7 @@ export function sendEmails({
         date,
         sessionId,
         students
-    });
+    }, { timeout: 60000 });
 }
 
 

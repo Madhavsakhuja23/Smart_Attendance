@@ -93,9 +93,9 @@ export default function QRGenerator({
                     await QRCode.toDataURL(
                         payload,
                         {
-                            width: 500,
-                            margin: 3,
-                            errorCorrectionLevel: "H"
+                            width: 300,
+                            margin: 2,
+                            errorCorrectionLevel: "M"
                         }
                     );
 
@@ -305,7 +305,7 @@ export default function QRGenerator({
                     resolve =>
                         setTimeout(
                             resolve,
-                            2000
+                            4000
                         )
                 );
 
@@ -331,7 +331,7 @@ export default function QRGenerator({
                     resolve =>
                         setTimeout(
                             resolve,
-                            3000
+                            5000
                         )
                 );
             }
