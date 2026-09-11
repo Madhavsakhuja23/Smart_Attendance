@@ -1,10 +1,15 @@
 import { useState } from "react";
 import QRCode from "qrcode";
+
 import {
     sendEmails,
     getEmailQueueStatus
 } from "../services/api";
 
+
+// =====================================================
+// RUN ASYNC TASKS CONCURRENTLY
+// =====================================================
 
 async function runConcurrent(tasks, limit) {
     const results = [];
@@ -30,6 +35,10 @@ async function runConcurrent(tasks, limit) {
 }
 
 
+// =====================================================
+// QR GENERATOR COMPONENT
+// =====================================================
+
 export default function QRGenerator({
     students,
     className,
@@ -39,9 +48,13 @@ export default function QRGenerator({
 }) {
 
     const [sending, setSending] = useState(false);
-const [progress, setProgress] = useState(0);
-const [result, setResult] = useState(null);
-const [phase, setPhase] = useState("idle");
+    const [progress, setProgress] = useState(0);
+    const [result, setResult] = useState(null);
+
+    // idle
+    // generating
+    // sending
+    const [phase, setPhase] = useState("idle");
 
 
     // =====================================================
@@ -55,16 +68,26 @@ const [phase, setPhase] = useState("idle");
 
         let done = 0;
 
+
         const tasks =
-            students.map((s, i) => async () => {
+            students.map((student, index) => async () => {
+
+                // -----------------------------------------
+                // QR PAYLOAD
+                // -----------------------------------------
 
                 const payload =
                     JSON.stringify({
                         className,
-                        rollNumber: s.roll,
+                        rollNumber: student.roll,
                         date,
                         sessionId
                     });
+
+
+                // -----------------------------------------
+                // GENERATE QR
+                // -----------------------------------------
 
                 const qr =
                     await QRCode.toDataURL(
@@ -76,25 +99,48 @@ const [phase, setPhase] = useState("idle");
                         }
                     );
 
-                qrStudents[i] = {
-                    roll: s.roll,
-                    name: s.name,
-                    email: s.email,
+
+                // -----------------------------------------
+                // STORE STUDENT + QR
+                // -----------------------------------------
+
+                qrStudents[index] = {
+                    roll: student.roll,
+                    name: student.name,
+                    email: student.email,
                     qrBase64: qr
                 };
 
+
+                // -----------------------------------------
+                // UPDATE GENERATION PROGRESS
+                // -----------------------------------------
+
                 done++;
 
+                const generationProgress =
+                    students.length > 0
+                        ? Math.round(
+                            (done / students.length) * 100
+                        )
+                        : 100;
+
                 setProgress(
-                    Math.round(
-                        (done / students.length) * 100
+                    Math.min(
+                        100,
+                        generationProgress
                     )
                 );
+
             });
 
 
         // Generate 5 QR codes concurrently
-        await runConcurrent(tasks, 5);
+        await runConcurrent(
+            tasks,
+            5
+        );
+
 
         return qrStudents.filter(Boolean);
     }
@@ -106,8 +152,16 @@ const [phase, setPhase] = useState("idle");
 
     async function monitorEmailQueue() {
 
-        const total =
+        /*
+         * IMPORTANT:
+         *
+         * We use the queue's total count when available.
+         * This is safer than relying only on students.length.
+         */
+
+        let total =
             students.length;
+
 
         while (true) {
 
@@ -117,6 +171,28 @@ const [phase, setPhase] = useState("idle");
                     await getEmailQueueStatus({
                         sessionId
                     });
+
+
+                // -----------------------------------------
+                // DEBUG LOG
+                // -----------------------------------------
+
+                console.log(
+                    "EMAIL QUEUE STATUS:",
+                    status
+                );
+
+
+                // -----------------------------------------
+                // GET COUNTS
+                // -----------------------------------------
+
+                const queueTotal =
+                    Number(status.total || 0);
+
+                if (queueTotal > 0) {
+                    total = queueTotal;
+                }
 
 
                 const sent =
@@ -137,44 +213,81 @@ const [phase, setPhase] = useState("idle");
                     Number(status.sending || 0);
 
 
-                /*
-                 * Email progress occupies the second
-                 * half of our progress bar.
-                 *
-                 * 50% was QR generation.
-                 * Remaining 50% is email sending.
-                 */
+                // -----------------------------------------
+                // CALCULATE COMPLETED EMAILS
+                // -----------------------------------------
+                //
+                // SENT + PERMANENTLY FAILED
+                //
+                // Example:
+                //
+                // 50 students
+                // 30 sent
+                // 2 failed
+                //
+                // completed = 32
+                // progress = 64%
+                //
+                // -----------------------------------------
 
                 const completedEmails =
                     sent + failed;
 
+
                 const emailProgress =
                     total > 0
                         ? Math.min(
-                            (completedEmails / total) * 100
+                            100,
+                            Math.round(
+                                (
+                                    completedEmails /
+                                    total
+                                ) * 100
+                            )
                         )
                         : 0;
 
 
+                // -----------------------------------------
+                // UPDATE PROGRESS BAR
+                // -----------------------------------------
+
                 setProgress(
-                  emailProgress
+                    emailProgress
                 );
 
 
-                /*
-                 * Queue completely finished.
-                 */
+                // -----------------------------------------
+                // DEBUG LOG
+                // -----------------------------------------
 
-                if (
-                    status.complete ||
+                console.log(
+                    `Email progress: ${completedEmails}/${total} = ${emailProgress}%`
+                );
+
+
+                console.log(
+                    `Sent: ${sent}, Failed: ${failed}, Pending: ${pending}, Retry: ${retryPending}, Sending: ${sending}`
+                );
+
+
+                // -----------------------------------------
+                // CHECK WHETHER QUEUE IS COMPLETE
+                // -----------------------------------------
+
+                const queueFinished =
+                    status.complete === true ||
                     (
                         pending === 0 &&
                         retryPending === 0 &&
                         sending === 0
-                    )
-                ) {
+                    );
+
+
+                if (queueFinished) {
 
                     setProgress(100);
+
 
                     return {
                         total,
@@ -184,9 +297,9 @@ const [phase, setPhase] = useState("idle");
                 }
 
 
-                /*
-                 * Wait 2 seconds before checking again.
-                 */
+                // -----------------------------------------
+                // WAIT BEFORE NEXT CHECK
+                // -----------------------------------------
 
                 await new Promise(
                     resolve =>
@@ -199,11 +312,20 @@ const [phase, setPhase] = useState("idle");
             } catch (error) {
 
                 /*
-                 * Don't immediately destroy the UI
+                 * IMPORTANT:
+                 *
+                 * Do NOT stop the email process just
                  * because one status request failed.
                  *
-                 * Wait and try again.
+                 * The Apps Script worker continues
+                 * working in the background.
                  */
+
+                console.error(
+                    "Email queue status error:",
+                    error
+                );
+
 
                 await new Promise(
                     resolve =>
@@ -223,20 +345,74 @@ const [phase, setPhase] = useState("idle");
 
     async function handleDispatch() {
 
+        // -----------------------------------------
+        // BASIC VALIDATION
+        // -----------------------------------------
+
+        if (!students || students.length === 0) {
+
+            setResult({
+                error:
+                    "No students available."
+            });
+
+            return;
+        }
+
+
+        if (!className) {
+
+            setResult({
+                error:
+                    "Class name is missing."
+            });
+
+            return;
+        }
+
+
+        if (!sessionId) {
+
+            setResult({
+                error:
+                    "Attendance session is missing."
+            });
+
+            return;
+        }
+
+
         try {
 
+            // -----------------------------------------
+            // RESET UI
+            // -----------------------------------------
+
             setSending(true);
+
             setResult(null);
+
             setProgress(0);
+
             setPhase("generating");
 
 
             // ============================================
-            // STEP 1 — Generate QR codes
+            // STEP 1 — GENERATE QR CODES
             // ============================================
+
+            console.log(
+                "Starting QR generation..."
+            );
+
 
             const qrStudents =
                 await generateQRCodes();
+
+
+            console.log(
+                `Generated ${qrStudents.length} QR codes.`
+            );
 
 
             if (!qrStudents.length) {
@@ -247,12 +423,24 @@ const [phase, setPhase] = useState("idle");
             }
 
 
-            setProgress(50);
+            // Make sure generation reaches 100%
+            setProgress(100);
 
 
             // ============================================
             // STEP 2 — CREATE EMAIL QUEUE
             // ============================================
+
+            setPhase("sending");
+
+            // Email progress starts from 0%
+            setProgress(0);
+
+
+            console.log(
+                "Creating email queue..."
+            );
+
 
             const queueResponse =
                 await sendEmails({
@@ -261,6 +449,12 @@ const [phase, setPhase] = useState("idle");
                     sessionId,
                     students: qrStudents
                 });
+
+
+            console.log(
+                "Email queue response:",
+                queueResponse
+            );
 
 
             if (
@@ -275,23 +469,14 @@ const [phase, setPhase] = useState("idle");
             }
 
 
-            /*
-             * Queue created.
-             *
-             * IMPORTANT:
-             * We DO NOT send emails here.
-             *
-             * Apps Script worker will send them
-             * automatically in batches of 50.
-             */
-
-            setPhase("sending");
-            setProgress(0);
-
-
             // ============================================
             // STEP 3 — MONITOR BACKGROUND EMAIL WORKER
             // ============================================
+
+            console.log(
+                "Email queue created. Monitoring..."
+            );
+
 
             const finalResult =
                 await monitorEmailQueue();
@@ -301,7 +486,11 @@ const [phase, setPhase] = useState("idle");
             // STEP 4 — SHOW FINAL RESULT
             // ============================================
 
+            setProgress(100);
+
+
             setResult({
+
                 sent:
                     finalResult.sent,
 
@@ -313,21 +502,32 @@ const [phase, setPhase] = useState("idle");
             });
 
 
+            // ============================================
+            // CALLBACK
+            // ============================================
+
             if (onComplete) {
                 onComplete();
             }
 
-        } catch (e) {
+        } catch (error) {
+
+            console.error(
+                "QR dispatch error:",
+                error
+            );
+
 
             setResult({
                 error:
-                    e.message ||
+                    error.message ||
                     "Something went wrong."
             });
 
         } finally {
 
             setSending(false);
+
             setPhase("idle");
         }
     }
@@ -341,6 +541,10 @@ const [phase, setPhase] = useState("idle");
 
         <div>
 
+            {/* =========================================
+                DISPATCH HEADER
+            ========================================= */}
+
             <div className="dispatch-header">
 
                 <div>
@@ -348,6 +552,7 @@ const [phase, setPhase] = useState("idle");
                     <h3>
                         Send QR Codes
                     </h3>
+
 
                     <p>
                         {students.length} students
@@ -372,6 +577,10 @@ const [phase, setPhase] = useState("idle");
             </div>
 
 
+            {/* =========================================
+                PROGRESS
+            ========================================= */}
+
             {sending && (
 
                 <div className="progress-container">
@@ -379,10 +588,13 @@ const [phase, setPhase] = useState("idle");
                     <div className="progress-text">
 
                         <span>
-                           {
-                            phase==="generating"?"Generating QR Codes ..":"Sending QR emails ..."
-                           }
+
+                            {phase === "generating"
+                                ? "Generating QR codes..."
+                                : "Sending QR emails..."}
+
                         </span>
+
 
                         <span>
                             {progress}%
@@ -404,9 +616,12 @@ const [phase, setPhase] = useState("idle");
                     </div>
 
                 </div>
-
             )}
 
+
+            {/* =========================================
+                FINAL RESULT
+            ========================================= */}
 
             {result &&
                 !result.error && (
@@ -414,50 +629,69 @@ const [phase, setPhase] = useState("idle");
                 <div className="dispatch-result">
 
                     <h3>
+
                         {result.failed === 0
                             ? "✅ All QR emails sent"
                             : "⚠ QR email sending completed"}
+
                     </h3>
 
 
                     <p>
+
                         Total:
+
                         <strong>
-                            {" "}{result.total}
+                            {" "}
+                            {result.total}
                         </strong>
+
                     </p>
 
 
                     <p>
+
                         Sent:
+
                         <strong>
-                            {" "}{result.sent}
+                            {" "}
+                            {result.sent}
                         </strong>
+
                     </p>
 
 
                     <p>
+
                         Failed:
+
                         <strong>
-                            {" "}{result.failed}
+                            {" "}
+                            {result.failed}
                         </strong>
+
                     </p>
 
 
                     {result.failed > 0 && (
 
                         <p>
+
                             Some emails could not
                             be delivered after the
                             automatic retry attempts.
+
                         </p>
 
                     )}
 
                 </div>
-
             )}
 
+
+            {/* =========================================
+                ERROR
+            ========================================= */}
 
             {result?.error && (
 
