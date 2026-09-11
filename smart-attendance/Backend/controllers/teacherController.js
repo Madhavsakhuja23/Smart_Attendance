@@ -181,13 +181,14 @@ const attendanceAction = async (req, res) => {
         }
 
         const allowedActions = [
-            "fetchStudents",
-            "createSession",
-            "sendEmails",
-            "verifyAndMarkPresent",
-            "finalizeDay",
-            "getAttendanceStatus"
-        ];
+    "fetchStudents",
+    "createSession",
+    "sendEmails",
+    "getEmailQueueStatus",
+    "verifyAndMarkPresent",
+    "finalizeDay",
+    "getAttendanceStatus"
+];
 
         if (!allowedActions.includes(action)) {
             return res.status(400).json({
@@ -217,6 +218,7 @@ const attendanceAction = async (req, res) => {
         });
     }
 };
+
 
 
 module.exports = {

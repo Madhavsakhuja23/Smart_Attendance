@@ -1,5 +1,4 @@
-const BACKEND_URL =
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 
 const DEFAULT_TIMEOUT = 20000; // 20 seconds
@@ -164,4 +163,10 @@ export function getAttendanceStatus(className) {
     return request("getAttendanceStatus", {
         className
     }, { dedup: true });
+}
+
+export async function getEmailQueueStatus({ sessionId }){
+    return request("getEmailQueueStatus", {
+        sessionId
+    });
 }

@@ -25,7 +25,6 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  // Restore session on mount
   useEffect(() => {
     (async () => {
       const token = sessionStorage.getItem("token");
