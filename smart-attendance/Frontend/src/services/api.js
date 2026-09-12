@@ -102,20 +102,19 @@ async function request(action, data = {}, options = {}) {
 // FETCH STUDENTS
 // =========================================================
 
-export function fetchStudents(
-    className
-) {
-    return attendanceCommand(
-        "fetchStudents",
-        {
-            className
-        },
-        {
-            timeout: 30000
-        }
+export async function fetchStudents(className) {
+    const { commandId } =
+        await createAttendanceCommand(
+            "FETCH_STUDENTS",
+            {
+                className
+            }
+        );
+
+    return await waitForAttendanceCommand(
+        commandId
     );
 }
-
 
 // =========================================================
 // CREATE SESSION
@@ -329,152 +328,105 @@ export async function getAddonConnectionStatus() {
 // ATTENDANCE COMMAND BRIDGE
 // =========================================================
 
-async function createAttendanceCommand(
-    action,
-    data = {}
-) {
-    const token =
-        sessionStorage.getItem("token");
+async function createAttendanceCommand(type, payload = {}) {
+    const token = sessionStorage.getItem("token");
 
-    if (!token) {
+    const response = await fetch(
+        `${BACKEND_URL}/api/teacher/attendance/command`,
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+
+            body: JSON.stringify({
+                type,
+                payload
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
         throw new Error(
-            "Please login first."
-        );
-    }
-
-    const response =
-        await fetch(
-            `${BACKEND_URL}/api/teacher/attendance/command`,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json",
-
-                    Authorization:
-                        `Bearer ${token}`
-                },
-
-                body: JSON.stringify({
-                    action,
-                    ...data
-                })
-            }
-        );
-
-    const result =
-        await response.json();
-
-    if (
-        !response.ok ||
-        result.status === "error"
-    ) {
-        throw new Error(
-            result.message ||
+            data.message ||
             "Unable to create attendance command."
         );
     }
 
-    return result;
+    return data;
 }
-
 
 // =========================================================
 // WAIT FOR ADD-ON RESULT
 // =========================================================
 
 async function waitForAttendanceCommand(
-    commandId,
-    options = {}
+    commandId
 ) {
-    const timeout =
-        options.timeout ||
-        30000;
+    const token =
+        sessionStorage.getItem("token");
 
-    const interval =
-        options.interval ||
-        1000;
+    const maxAttempts = 60;
 
-    const startedAt =
-        Date.now();
-
-    while (
-        Date.now() - startedAt <
-        timeout
+    for (
+        let attempt = 0;
+        attempt < maxAttempts;
+        attempt++
     ) {
+        const response = await fetch(
+            `${BACKEND_URL}/api/teacher/attendance/command/${commandId}`,
+            {
+                method: "GET",
 
-        const token =
-            sessionStorage.getItem(
-                "token"
-            );
-
-        if (!token) {
-            throw new Error(
-                "Please login first."
-            );
-        }
-
-        const response =
-            await fetch(
-                `${BACKEND_URL}/api/teacher/attendance/command/${commandId}`,
-                {
-                    method: "GET",
-
-                    headers: {
-                        Authorization:
-                            `Bearer ${token}`
-                    }
+                headers: {
+                    Authorization:
+                        `Bearer ${token}`
                 }
-            );
+            }
+        );
 
-        const result =
+        const data =
             await response.json();
 
-        if (
-            !response.ok ||
-            result.status === "error"
-        ) {
+        if (!response.ok) {
             throw new Error(
-                result.message ||
-                "Unable to retrieve command result."
+                data.message ||
+                "Unable to check attendance command."
             );
         }
 
-        const command =
-            result.command;
-
         if (
-            command.status ===
+            data.commandStatus ===
             "COMPLETED"
         ) {
-            return command.result;
+            return data.result;
         }
 
         if (
-            command.status ===
+            data.commandStatus ===
             "FAILED"
         ) {
             throw new Error(
-                command.errorMessage ||
-                "Add-on command failed."
+                data.errorMessage ||
+                "Attendance command failed."
             );
         }
 
+        // Still PENDING / PROCESSING
         await new Promise(
             resolve =>
-                setTimeout(
-                    resolve,
-                    interval
-                )
+                setTimeout(resolve, 2000)
         );
     }
 
     throw new Error(
-        "The Google Sheets Add-on did not respond in time. Please make sure the Smart Attendance sidebar is open."
+        "Attendance command timed out. Please make sure the Smart Attendance Add-on is open in your Google Sheet."
     );
 }
-
 
 // =========================================================
 // EXECUTE ATTENDANCE THROUGH ADD-ON
