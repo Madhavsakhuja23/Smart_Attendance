@@ -35,7 +35,7 @@ router.post(
 
 router.get(
     "/addon/status",
-    authMiddleware,
+    protect,
     getTeacherAddonStatus
 );
 
