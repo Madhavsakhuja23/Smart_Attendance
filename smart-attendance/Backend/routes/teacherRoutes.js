@@ -4,7 +4,8 @@ const {
     getClasses,
     attendanceAction,
     generatePairingCode,
-    pairAddon
+    pairAddon,
+    getTeacherAddonStatus
 } = require("../controllers/teacherController");
 
 const protect = require("../middleware/authMiddleware");
@@ -30,6 +31,12 @@ router.post(
 router.post(
     "/addon/pair",
     pairAddon
+);
+
+router.get(
+    "/addon/status",
+    authMiddleware,
+    getTeacherAddonStatus
 );
 
 module.exports = router;

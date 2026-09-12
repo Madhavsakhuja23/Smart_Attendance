@@ -170,3 +170,73 @@ export async function getEmailQueueStatus({ sessionId }){
         sessionId
     });
 }
+
+// ==========================================
+// GOOGLE SHEETS ADD-ON SETUP
+// ==========================================
+
+export async function generatePairingCode() {
+
+    const token = sessionStorage.getItem("token");
+
+    if (!token) {
+        throw new Error("Please login first.");
+    }
+
+    const response = await fetch(
+        `${BACKEND_URL}/api/teacher/addon/generate-pairing-code`,
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.status === "error") {
+        throw new Error(
+            result.message || "Unable to generate pairing code."
+        );
+    }
+
+    return result;
+}
+
+
+// ==========================================
+// CHECK ADD-ON CONNECTION
+// ==========================================
+
+export async function getAddonConnectionStatus() {
+
+    const token = sessionStorage.getItem("token");
+
+    if (!token) {
+        throw new Error("Please login first.");
+    }
+
+    const response = await fetch(
+        `${BACKEND_URL}/api/teacher/addon/status`,
+        {
+            method: "GET",
+
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result.status === "error") {
+        throw new Error(
+            result.message || "Unable to check Add-on connection."
+        );
+    }
+
+    return result;
+}

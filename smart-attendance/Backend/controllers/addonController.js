@@ -79,7 +79,63 @@ const syncAddonClasses = async (req, res) => {
     }
 };
 
+// =========================
+// TEACHER ADD-ON STATUS
+// =========================
+
+const getTeacherAddonStatus = async (req, res) => {
+    try {
+
+        const teacher = await Teacher.findOne({
+            teacherId: req.teacher.teacherId,
+            status: "active"
+        });
+
+        if (!teacher) {
+            return res.status(404).json({
+                status: "error",
+                message: "Teacher not found."
+            });
+        }
+
+        return res.status(200).json({
+            status: "success",
+
+            connected: Boolean(
+                teacher.googleConnected &&
+                teacher.connectedSpreadsheetId
+            ),
+
+            teacher: {
+                teacherId: teacher.teacherId,
+                googleEmail: teacher.googleEmail || null,
+                spreadsheetId:
+                    teacher.connectedSpreadsheetId || null,
+                spreadsheetName:
+                    teacher.connectedSpreadsheetName || null
+            },
+
+            classes: Array.isArray(teacher.connectedClasses)
+                ? teacher.connectedClasses
+                : []
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Teacher Add-on status error:",
+            error
+        );
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to check Add-on connection."
+        });
+    }
+};
+
 module.exports = {
     getAddonStatus,
-    syncAddonClasses
+    syncAddonClasses,
+    getTeacherAddonStatus
 };
