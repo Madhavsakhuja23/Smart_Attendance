@@ -14,11 +14,20 @@ const router = express.Router();
 
 
 // Get classes from teacher's spreadsheet
-router.get("/classes", protect, getClasses);
+router.get(
+    "/classes",
+    protect,
+    getClasses
+);
 
 
 // Attendance actions
-router.post("/attendance", protect, attendanceAction);
+router.post(
+    "/attendance",
+    protect,
+    attendanceAction
+);
+
 
 // Generate Google Sheets Add-on pairing code
 router.post(
@@ -27,16 +36,20 @@ router.post(
     generatePairingCode
 );
 
+
 // Pair Google Sheets Add-on
 router.post(
     "/addon/pair",
     pairAddon
 );
 
+
+// Teacher Add-on connection status
 router.get(
     "/addon/status",
     protect,
     getTeacherAddonStatus
 );
+
 
 module.exports = router;
