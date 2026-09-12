@@ -31,8 +31,6 @@ const allowedOrigins = [
 const corsOptions = {
     origin: function (origin, callback) {
 
-        // Allow requests without an Origin header
-        // such as Thunder Client / server-to-server requests
         if (!origin) {
             return callback(null, true);
         }
@@ -66,7 +64,6 @@ const corsOptions = {
     optionsSuccessStatus: 204
 };
 
-// CORS middleware
 app.use(cors(corsOptions));
 
 
