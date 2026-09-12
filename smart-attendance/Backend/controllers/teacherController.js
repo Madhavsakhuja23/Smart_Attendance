@@ -130,40 +130,47 @@ const callAppsScript = async (teacherId, action, data = {}, timeoutMs) => {
 
 const getClasses = async (req, res) => {
     try {
-        const teacherId = req.teacher.teacherId;
-        const cacheKey = `classes:${teacherId}`;
+        const teacher = await Teacher.findOne({
+            teacherId: req.teacher.teacherId,
+            status: "active"
+        });
 
-        // Check cache first
-        const cached = getCached(cacheKey);
-
-        if (cached) {
-            return res.status(200).json(cached);
+        if (!teacher) {
+            return res.status(404).json({
+                status: "error",
+                message: "Teacher not found."
+            });
         }
 
-        const result = await callAppsScript(
-            teacherId,
-            "getClasses"
-        );
-
-        if (result.status === "error") {
-            return res.status(400).json(result);
+        if (!teacher.googleConnected) {
+            return res.status(400).json({
+                status: "error",
+                message: "Google Sheet is not connected."
+            });
         }
 
-        // Cache the successful result
-        setCache(cacheKey, result, CLASSES_CACHE_TTL);
+        const classes = Array.isArray(teacher.connectedClasses)
+            ? teacher.connectedClasses
+            : [];
 
-        return res.status(200).json(result);
+        return res.status(200).json({
+            status: "success",
+            classes: classes
+        });
 
     } catch (error) {
-        console.error("Get classes error:", error);
+
+        console.error(
+            "Get teacher classes error:",
+            error
+        );
 
         return res.status(500).json({
             status: "error",
-            message: error.message || "Unable to fetch classes."
+            message: "Unable to fetch classes."
         });
     }
 };
-
 
 // =========================
 // ATTENDANCE ACTION
