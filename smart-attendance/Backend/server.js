@@ -17,6 +17,8 @@ const app = express();
 connectDB();
 
 // CORS
+
+
 // ==========================================
 // CORS
 // ==========================================
@@ -26,23 +28,48 @@ const allowedOrigins = [
     "https://smart-attendance-cu.vercel.app"
 ];
 
-app.use(
-    cors({
-        origin: allowedOrigins,
-        methods: [
-            "GET",
-            "POST",
-            "PUT",
-            "DELETE",
-            "OPTIONS"
-        ],
-        allowedHeaders: [
-            "Content-Type",
-            "Authorization"
-        ],
-        credentials: false
-    })
-);
+const corsOptions = {
+    origin: function (origin, callback) {
+
+        // Allow requests without an Origin header
+        // such as Thunder Client / server-to-server requests
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        console.warn("CORS blocked origin:", origin);
+
+        return callback(
+            new Error("Not allowed by CORS")
+        );
+    },
+
+    methods: [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS"
+    ],
+
+    allowedHeaders: [
+        "Content-Type",
+        "Authorization"
+    ],
+
+    credentials: false,
+
+    optionsSuccessStatus: 204
+};
+
+// CORS middleware
+app.use(cors(corsOptions));
+
+
 
 
 // Gzip compression — reduces response size by 60-80%
