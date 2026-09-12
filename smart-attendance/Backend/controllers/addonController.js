@@ -296,10 +296,140 @@ const submitAddonCommandResult = async (req, res) => {
     }
 };
 
+// ==========================================
+// CREATE ATTENDANCE COMMAND
+// ==========================================
+
+const createAttendanceCommand = async (req, res) => {
+    try {
+        const teacher = req.teacher;
+
+        if (
+            !teacher ||
+            !teacher.teacherId
+        ) {
+            return res.status(401).json({
+                status: "error",
+                message: "Teacher authentication required."
+            });
+        }
+
+        const {
+            type,
+            payload = {}
+        } = req.body;
+
+        const allowedTypes = [
+            "FETCH_STUDENTS",
+            "CREATE_SESSION",
+            "MARK_PRESENT",
+            "FINALIZE_DAY",
+            "GET_ATTENDANCE_STATUS",
+            "SEND_EMAILS",
+            "GET_EMAIL_QUEUE_STATUS"
+        ];
+
+        if (!allowedTypes.includes(type)) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid attendance command type."
+            });
+        }
+
+        if (
+            !teacher.connectedSpreadsheetId
+        ) {
+            return res.status(400).json({
+                status: "error",
+                message: "No Google Sheet is connected."
+            });
+        }
+
+        const command = await AttendanceCommand.create({
+            teacherId: teacher.teacherId,
+            spreadsheetId: teacher.connectedSpreadsheetId,
+            type,
+            payload,
+            status: "PENDING",
+
+            // Command valid for 2 minutes
+            expiresAt: new Date(
+                Date.now() + 2 * 60 * 1000
+            )
+        });
+
+        return res.status(201).json({
+            status: "success",
+            commandId: command._id.toString()
+        });
+
+    } catch (error) {
+        console.error(
+            "Create attendance command error:",
+            error
+        );
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to create attendance command."
+        });
+    }
+};
+
+
+// ==========================================
+// GET ATTENDANCE COMMAND RESULT
+// ==========================================
+
+const getAttendanceCommandResult = async (
+    req,
+    res
+) => {
+    try {
+        const teacher = req.teacher;
+
+        const command =
+            await AttendanceCommand.findOne({
+                _id: req.params.commandId,
+                teacherId: teacher.teacherId
+            });
+
+        if (!command) {
+            return res.status(404).json({
+                status: "error",
+                message: "Attendance command not found."
+            });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            commandId: command._id.toString(),
+            commandStatus: command.status,
+            result: command.result,
+            errorMessage: command.errorMessage
+        });
+
+    } catch (error) {
+        console.error(
+            "Get attendance command result error:",
+            error
+        );
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to retrieve command result."
+        });
+    }
+};
+
 module.exports = {
     getAddonStatus,
     syncAddonClasses,
     getTeacherAddonStatus,
+
     getNextAddonCommand,
-    submitAddonCommandResult
+    submitAddonCommandResult,
+
+    createAttendanceCommand,
+    getAttendanceCommandResult
 };

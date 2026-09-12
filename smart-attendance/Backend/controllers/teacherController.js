@@ -385,6 +385,7 @@ const pairAddon = async (req, res) => {
 
         teacher.connectionTokenHash = connectionTokenHash;
         teacher.connectionTokenCreatedAt = new Date();
+        teacher.setupCompleted = true;
 
         // Pairing code is one-time use
         teacher.pairingCodeHash = null;
@@ -422,94 +423,6 @@ const pairAddon = async (req, res) => {
 // CREATE ADD-ON COMMAND
 // =========================
 
-const createAttendanceCommand = async (req, res) => {
-    try {
-        const { action, ...data } = req.body;
-
-        if (!action) {
-            return res.status(400).json({
-                status: "error",
-                message: "Action is required."
-            });
-        }
-
-        const actionMap = {
-            fetchStudents: "FETCH_STUDENTS",
-            createSession: "CREATE_SESSION",
-            verifyAndMarkPresent: "MARK_PRESENT",
-            finalizeDay: "FINALIZE_DAY",
-            getAttendanceStatus: "GET_ATTENDANCE_STATUS",
-            sendEmails: "SEND_EMAILS",
-            getEmailQueueStatus: "GET_EMAIL_QUEUE_STATUS"
-        };
-
-        const commandType = actionMap[action];
-
-        if (!commandType) {
-            return res.status(400).json({
-                status: "error",
-                message: "Invalid attendance action."
-            });
-        }
-
-        const teacher = await Teacher.findOne({
-            teacherId: req.teacher.teacherId,
-            status: "active"
-        });
-
-        if (!teacher) {
-            return res.status(404).json({
-                status: "error",
-                message: "Teacher not found."
-            });
-        }
-
-        if (
-            !teacher.googleConnected ||
-            !teacher.connectedSpreadsheetId
-        ) {
-            return res.status(400).json({
-                status: "error",
-                message: "Google Sheet is not connected."
-            });
-        }
-
-        const command = await AttendanceCommand.create({
-            teacherId: teacher.teacherId,
-
-            spreadsheetId:
-                teacher.connectedSpreadsheetId,
-
-            type: commandType,
-
-            payload: data,
-
-            status: "PENDING",
-
-            expiresAt: new Date(
-                Date.now() + 5 * 60 * 1000
-            )
-        });
-
-        return res.status(201).json({
-            status: "success",
-            message: "Attendance command created.",
-            commandId: command._id
-        });
-
-    } catch (error) {
-
-        console.error(
-            "Create attendance command error:",
-            error
-        );
-
-        return res.status(500).json({
-            status: "error",
-            message: "Unable to create attendance command."
-        });
-    }
-};
 
 // =========================
 // GET ATTENDANCE COMMAND RESULT
@@ -586,6 +499,5 @@ module.exports = {
     attendanceAction,
     generatePairingCode,
     pairAddon,
-    createAttendanceCommand,
     getAttendanceCommandResult
 };

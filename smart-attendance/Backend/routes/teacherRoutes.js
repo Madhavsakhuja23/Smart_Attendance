@@ -4,14 +4,13 @@ const {
     getClasses,
     attendanceAction,
     generatePairingCode,
-    pairAddon,
-    createAttendanceCommand
+    pairAddon
 } = require("../controllers/teacherController");
-
 const {
-    getTeacherAddonStatus
+    getTeacherAddonStatus,
+    createAttendanceCommand,
+    getAttendanceCommandResult
 } = require("../controllers/addonController");
-
 const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -59,6 +58,22 @@ router.post(
     "/attendance/command",
     protect,
     createAttendanceCommand
+);
+
+// ==========================================
+// ATTENDANCE COMMAND BRIDGE
+// ==========================================
+
+router.post(
+    "/attendance/command",
+    protect,
+    createAttendanceCommand
+);
+
+router.get(
+    "/attendance/command/:commandId",
+    protect,
+    getAttendanceCommandResult
 );
 
 module.exports = router;

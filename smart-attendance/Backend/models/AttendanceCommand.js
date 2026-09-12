@@ -73,7 +73,8 @@ const attendanceCommandSchema = new mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model(
-    "AttendanceCommand",
-    attendanceCommandSchema
-);
+module.exports =
+    mongoose.model(
+        "AttendanceCommand",
+        attendanceCommandSchema
+    );
