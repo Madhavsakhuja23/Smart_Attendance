@@ -4,9 +4,12 @@ const {
     getClasses,
     attendanceAction,
     generatePairingCode,
-    pairAddon,
-    getTeacherAddonStatus
+    pairAddon
 } = require("../controllers/teacherController");
+
+const {
+    getTeacherAddonStatus
+} = require("../controllers/addonController");
 
 const protect = require("../middleware/authMiddleware");
 
