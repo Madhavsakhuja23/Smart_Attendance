@@ -1,7 +1,8 @@
 const express = require("express");
 
 const {
-    getAddonStatus
+    getAddonStatus,
+    syncAddonClasses
 } = require("../controllers/addonController");
 
 const addonAuth = require("../middleware/addonAuthMiddleware");
@@ -17,6 +18,11 @@ router.get(
     "/status",
     addonAuth,
     getAddonStatus
+);
+router.post(
+    "/classes/sync",
+    addonAuth,
+    syncAddonClasses
 );
 
 

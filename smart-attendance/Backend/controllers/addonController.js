@@ -28,6 +28,58 @@ const getAddonStatus = async (req, res) => {
     }
 };
 
+// =========================
+// SYNC CLASSES FROM ADD-ON
+// =========================
+
+const syncAddonClasses = async (req, res) => {
+    try {
+        const { classes } = req.body;
+
+        if (!Array.isArray(classes)) {
+            return res.status(400).json({
+                status: "error",
+                message: "Classes must be an array."
+            });
+        }
+
+        // Clean and normalize class names
+        const cleanedClasses = [
+            ...new Set(
+                classes
+                    .map(className =>
+                        String(className || "").trim()
+                    )
+                    .filter(Boolean)
+            )
+        ];
+
+        const teacher = req.teacher;
+
+        teacher.connectedClasses = cleanedClasses;
+
+        await teacher.save();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Classes synchronized successfully.",
+            classes: cleanedClasses
+        });
+
+    } catch (error) {
+        console.error(
+            "Sync Add-on classes error:",
+            error
+        );
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to synchronize classes."
+        });
+    }
+};
+
 module.exports = {
-    getAddonStatus
+    getAddonStatus,
+    syncAddonClasses
 };

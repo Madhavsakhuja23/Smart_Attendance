@@ -69,6 +69,10 @@ const teacherSchema = new mongoose.Schema(
             default: null,
             trim: true
         },
+        connectedClasses: {
+            type: [String],
+            default: []
+        },
 
         // ==========================================
         // PAIRING
