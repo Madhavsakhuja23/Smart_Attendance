@@ -98,79 +98,151 @@ async function request(action, data = {}, options = {}) {
 }
 
 
-// Fetch students
-export function fetchStudents(className) {
-    return request("fetchStudents", {
-        className
-    }, { dedup: true });
+// =========================================================
+// FETCH STUDENTS
+// =========================================================
+
+export function fetchStudents(
+    className
+) {
+    return attendanceCommand(
+        "fetchStudents",
+        {
+            className
+        },
+        {
+            timeout: 30000
+        }
+    );
 }
 
 
-// Create attendance session
-export function createSession(className) {
-    return request("createSession", {
-        className
-    });
+// =========================================================
+// CREATE SESSION
+// =========================================================
+
+export function createSession(
+    className
+) {
+    return attendanceCommand(
+        "createSession",
+        {
+            className
+        },
+        {
+            timeout: 30000
+        }
+    );
 }
 
 
-// Send QR emails
+// =========================================================
+// SEND EMAILS
+// =========================================================
+
 export function sendEmails({
     className,
     date,
     sessionId,
     students
 }) {
-    return request("sendEmails", {
-        className,
-        date,
-        sessionId,
-        students
-    }, { timeout: 60000 });
+    return attendanceCommand(
+        "sendEmails",
+        {
+            className,
+            date,
+            sessionId,
+            students
+        },
+        {
+            timeout: 120000
+        }
+    );
 }
 
 
-// Mark student present
+// =========================================================
+// MARK PRESENT
+// =========================================================
+
 export function markPresent({
     className,
     rollNumber,
     date,
     sessionId
 }) {
-    return request("verifyAndMarkPresent", {
-        className,
-        rollNumber,
-        date,
-        sessionId
-    });
+    return attendanceCommand(
+        "verifyAndMarkPresent",
+        {
+            className,
+            rollNumber,
+            date,
+            sessionId
+        },
+        {
+            timeout: 30000
+        }
+    );
 }
 
 
-// Finalize attendance
+// =========================================================
+// FINALIZE DAY
+// =========================================================
+
 export function finalizeDay({
     className,
     sessionId
 }) {
-    return request("finalizeDay", {
-        className,
-        sessionId
-    });
+    return attendanceCommand(
+        "finalizeDay",
+        {
+            className,
+            sessionId
+        },
+        {
+            timeout: 30000
+        }
+    );
 }
 
 
-// Get attendance status
-export function getAttendanceStatus(className) {
-    return request("getAttendanceStatus", {
-        className
-    }, { dedup: true });
+// =========================================================
+// ATTENDANCE STATUS
+// =========================================================
+
+export function getAttendanceStatus(
+    className
+) {
+    return attendanceCommand(
+        "getAttendanceStatus",
+        {
+            className
+        },
+        {
+            timeout: 30000
+        }
+    );
 }
 
-export async function getEmailQueueStatus({ sessionId }){
-    return request("getEmailQueueStatus", {
-        sessionId
-    });
-}
 
+// =========================================================
+// EMAIL QUEUE STATUS
+// =========================================================
+
+export function getEmailQueueStatus({
+    sessionId
+}) {
+    return attendanceCommand(
+        "getEmailQueueStatus",
+        {
+            sessionId
+        },
+        {
+            timeout: 30000
+        }
+    );
+}
 // ==========================================
 // GOOGLE SHEETS ADD-ON SETUP
 // ==========================================
@@ -251,4 +323,176 @@ export async function getAddonConnectionStatus() {
     }
 
     return result;
+}
+
+// =========================================================
+// ATTENDANCE COMMAND BRIDGE
+// =========================================================
+
+async function createAttendanceCommand(
+    action,
+    data = {}
+) {
+    const token =
+        sessionStorage.getItem("token");
+
+    if (!token) {
+        throw new Error(
+            "Please login first."
+        );
+    }
+
+    const response =
+        await fetch(
+            `${BACKEND_URL}/api/teacher/attendance/command`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json",
+
+                    Authorization:
+                        `Bearer ${token}`
+                },
+
+                body: JSON.stringify({
+                    action,
+                    ...data
+                })
+            }
+        );
+
+    const result =
+        await response.json();
+
+    if (
+        !response.ok ||
+        result.status === "error"
+    ) {
+        throw new Error(
+            result.message ||
+            "Unable to create attendance command."
+        );
+    }
+
+    return result;
+}
+
+
+// =========================================================
+// WAIT FOR ADD-ON RESULT
+// =========================================================
+
+async function waitForAttendanceCommand(
+    commandId,
+    options = {}
+) {
+    const timeout =
+        options.timeout ||
+        30000;
+
+    const interval =
+        options.interval ||
+        1000;
+
+    const startedAt =
+        Date.now();
+
+    while (
+        Date.now() - startedAt <
+        timeout
+    ) {
+
+        const token =
+            sessionStorage.getItem(
+                "token"
+            );
+
+        if (!token) {
+            throw new Error(
+                "Please login first."
+            );
+        }
+
+        const response =
+            await fetch(
+                `${BACKEND_URL}/api/teacher/attendance/command/${commandId}`,
+                {
+                    method: "GET",
+
+                    headers: {
+                        Authorization:
+                            `Bearer ${token}`
+                    }
+                }
+            );
+
+        const result =
+            await response.json();
+
+        if (
+            !response.ok ||
+            result.status === "error"
+        ) {
+            throw new Error(
+                result.message ||
+                "Unable to retrieve command result."
+            );
+        }
+
+        const command =
+            result.command;
+
+        if (
+            command.status ===
+            "COMPLETED"
+        ) {
+            return command.result;
+        }
+
+        if (
+            command.status ===
+            "FAILED"
+        ) {
+            throw new Error(
+                command.errorMessage ||
+                "Add-on command failed."
+            );
+        }
+
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    interval
+                )
+        );
+    }
+
+    throw new Error(
+        "The Google Sheets Add-on did not respond in time. Please make sure the Smart Attendance sidebar is open."
+    );
+}
+
+
+// =========================================================
+// EXECUTE ATTENDANCE THROUGH ADD-ON
+// =========================================================
+
+async function attendanceCommand(
+    action,
+    data = {},
+    options = {}
+) {
+    const command =
+        await createAttendanceCommand(
+            action,
+            data
+        );
+
+    return waitForAttendanceCommand(
+        command.commandId,
+        options
+    );
 }
