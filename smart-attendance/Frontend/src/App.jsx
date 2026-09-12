@@ -93,6 +93,17 @@ function App() {
     setAuthView("login");
   };
 
+  const handleSetupComplete = (setupData) => {
+    setTeacher(prev => ({
+        ...prev,
+        setupCompleted: true
+    }));
+
+    if (setupData?.teacher?.classes) {
+        setClasses(setupData.teacher.classes);
+    }
+};
+
   const handleClassChange = (e) => {
     setClassName(e.target.value);
     setStudents([]); setSession(null); setScannerOpen(false);
@@ -209,9 +220,15 @@ function App() {
   }
 
   // ── Setup Required (new teachers with setupCompleted: false) ──
-  if (teacher.setupCompleted === false) {
-    return <SetupPage teacher={teacher} onLogout={handleLogout} />;
-  }
+ if (teacher.setupCompleted === false) {
+    return (
+        <SetupPage
+            teacher={teacher}
+            onLogout={handleLogout}
+            onSetupComplete={handleSetupComplete}
+        />
+    );
+}
 
   // ── Dashboard ──
   return (
