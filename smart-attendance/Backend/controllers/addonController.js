@@ -302,17 +302,27 @@ const submitAddonCommandResult = async (req, res) => {
 
 const createAttendanceCommand = async (req, res) => {
     try {
-        const teacher = req.teacher;
+        const authTeacher = req.teacher;
 
-        if (
-            !teacher ||
-            !teacher.teacherId
-        ) {
-            return res.status(401).json({
-                status: "error",
-                message: "Teacher authentication required."
-            });
-        }
+if (!authTeacher || !authTeacher.teacherId) {
+    return res.status(401).json({
+        status: "error",
+        message: "Teacher authentication required."
+    });
+}
+
+// Get the complete teacher document from MongoDB
+const teacher = await Teacher.findOne({
+    teacherId: authTeacher.teacherId,
+    status: "active"
+});
+
+if (!teacher) {
+    return res.status(404).json({
+        status: "error",
+        message: "Teacher not found."
+    });
+}
 
         const {
             type,
