@@ -120,11 +120,9 @@ export async function fetchStudents(className) {
 // CREATE SESSION
 // =========================================================
 
-export function createSession(
-    className
-) {
+export function createSession(className) {
     return attendanceCommand(
-        "createSession",
+        "CREATE_SESSION",
         {
             className
         },
@@ -146,7 +144,7 @@ export function sendEmails({
     students
 }) {
     return attendanceCommand(
-        "sendEmails",
+        "SEND_EMAILS",
         {
             className,
             date,
@@ -171,7 +169,7 @@ export function markPresent({
     sessionId
 }) {
     return attendanceCommand(
-        "verifyAndMarkPresent",
+        "MARK_PRESENT",
         {
             className,
             rollNumber,
@@ -194,7 +192,7 @@ export function finalizeDay({
     sessionId
 }) {
     return attendanceCommand(
-        "finalizeDay",
+        "FINALIZE_DAY",
         {
             className,
             sessionId
@@ -210,11 +208,9 @@ export function finalizeDay({
 // ATTENDANCE STATUS
 // =========================================================
 
-export function getAttendanceStatus(
-    className
-) {
+export function getAttendanceStatus(className) {
     return attendanceCommand(
-        "getAttendanceStatus",
+        "GET_ATTENDANCE_STATUS",
         {
             className
         },
@@ -233,7 +229,7 @@ export function getEmailQueueStatus({
     sessionId
 }) {
     return attendanceCommand(
-        "getEmailQueueStatus",
+        "GET_EMAIL_QUEUE_STATUS",
         {
             sessionId
         },
