@@ -30,41 +30,33 @@ export default function SetupPage({
     // ==========================================
 
     const checkConnection = async () => {
+    setCheckingConnection(true);
+    setError("");
 
-        setCheckingConnection(true);
-        setError("");
+    try {
+        const result = await getAddonConnectionStatus();
 
-        try {
+        if (result.connected) {
+    setConnected(true);
 
-            const result =
-                await getAddonConnectionStatus();
+    setConnectionInfo({
+        ...result.teacher,
+        classes: result.classes || []
+    });
+} else {
+    setConnected(false);
+    setConnectionInfo(null);
+}
 
-            if (result.connected) {
-
-                setConnected(true);
-
-                setConnectionInfo(
-                    result.teacher
-                );
-
-                // If connection exists, setup is complete
-                if (onSetupComplete) {
-                    onSetupComplete(result);
-                }
-            }
-
-        } catch (error) {
-
-            setError(
-                error.message ||
-                "Unable to check connection."
-            );
-
-        } finally {
-
-            setCheckingConnection(false);
-        }
-    };
+    } catch (error) {
+        setError(
+            error.message ||
+            "Unable to check connection."
+        );
+    } finally {
+        setCheckingConnection(false);
+    }
+};
 
 
     // ==========================================

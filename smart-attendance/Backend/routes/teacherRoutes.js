@@ -4,7 +4,8 @@ const {
     getClasses,
     attendanceAction,
     generatePairingCode,
-    pairAddon
+    pairAddon,
+    createAttendanceCommand
 } = require("../controllers/teacherController");
 
 const {
@@ -54,5 +55,10 @@ router.get(
     getTeacherAddonStatus
 );
 
+router.post(
+    "/attendance/command",
+    protect,
+    createAttendanceCommand
+);
 
 module.exports = router;

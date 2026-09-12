@@ -1,3 +1,5 @@
+const Teacher = require("../models/Teacher");
+const AttendanceCommand = require("../models/AttendanceCommand");
 // =========================
 // ADD-ON CONNECTION STATUS
 // =========================
@@ -134,8 +136,170 @@ const getTeacherAddonStatus = async (req, res) => {
     }
 };
 
+// =========================
+// GET NEXT ADD-ON COMMAND
+// =========================
+
+const getNextAddonCommand = async (req, res) => {
+    try {
+
+        const teacher = req.teacher;
+
+        const command =
+            await AttendanceCommand.findOneAndUpdate(
+                {
+                    teacherId: teacher.teacherId,
+
+                    spreadsheetId:
+                        teacher.connectedSpreadsheetId,
+
+                    status: "PENDING",
+
+                    $or: [
+                        { expiresAt: null },
+                        { expiresAt: { $gt: new Date() } }
+                    ]
+                },
+                {
+                    $set: {
+                        status: "PROCESSING"
+                    }
+                },
+                {
+                    sort: {
+                        createdAt: 1
+                    },
+                    new: true
+                }
+            );
+
+        if (!command) {
+            return res.status(200).json({
+                status: "success",
+                command: null
+            });
+        }
+
+        return res.status(200).json({
+            status: "success",
+
+            command: {
+                id: command._id,
+
+                type: command.type,
+
+                payload: command.payload
+            }
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Get Add-on command error:",
+            error
+        );
+
+        return res.status(500).json({
+            status: "error",
+            message: "Unable to retrieve Add-on command."
+        });
+    }
+};
+
+// =========================
+// SUBMIT ADD-ON COMMAND RESULT
+// =========================
+
+const submitAddonCommandResult = async (req, res) => {
+    try {
+
+        const teacher = req.teacher;
+
+        const { commandId, status, result, errorMessage } =
+            req.body;
+
+        if (!commandId) {
+            return res.status(400).json({
+                status: "error",
+                message: "Command ID is required."
+            });
+        }
+
+        if (!["COMPLETED", "FAILED"].includes(status)) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid command result status."
+            });
+        }
+
+        const command =
+            await AttendanceCommand.findOne({
+                _id: commandId,
+
+                teacherId: teacher.teacherId,
+
+                spreadsheetId:
+                    teacher.connectedSpreadsheetId
+            });
+
+        if (!command) {
+            return res.status(404).json({
+                status: "error",
+                message: "Command not found."
+            });
+        }
+
+        if (command.status !== "PROCESSING") {
+            return res.status(400).json({
+                status: "error",
+                message:
+                    "Command is not currently being processed."
+            });
+        }
+
+        command.status = status;
+
+        command.result =
+            status === "COMPLETED"
+                ? result || null
+                : null;
+
+        command.errorMessage =
+            status === "FAILED"
+                ? String(
+                    errorMessage ||
+                    "Add-on command failed."
+                )
+                : null;
+
+        command.processedAt = new Date();
+
+        await command.save();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Command result stored."
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Submit Add-on command result error:",
+            error
+        );
+
+        return res.status(500).json({
+            status: "error",
+            message:
+                "Unable to store command result."
+        });
+    }
+};
+
 module.exports = {
     getAddonStatus,
     syncAddonClasses,
-    getTeacherAddonStatus
+    getTeacherAddonStatus,
+    getNextAddonCommand,
+    submitAddonCommandResult
 };

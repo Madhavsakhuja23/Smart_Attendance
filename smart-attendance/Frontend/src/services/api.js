@@ -176,7 +176,6 @@ export async function getEmailQueueStatus({ sessionId }){
 // ==========================================
 
 export async function generatePairingCode() {
-
     const token = sessionStorage.getItem("token");
 
     if (!token) {
@@ -187,7 +186,6 @@ export async function generatePairingCode() {
         `${BACKEND_URL}/api/teacher/addon/generate-pairing-code`,
         {
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`
@@ -195,7 +193,15 @@ export async function generatePairingCode() {
         }
     );
 
-    const result = await response.json();
+    let result;
+
+    try {
+        result = await response.json();
+    } catch {
+        throw new Error(
+            `Server returned an invalid response (${response.status}).`
+        );
+    }
 
     if (!response.ok || result.status === "error") {
         throw new Error(
@@ -212,7 +218,6 @@ export async function generatePairingCode() {
 // ==========================================
 
 export async function getAddonConnectionStatus() {
-
     const token = sessionStorage.getItem("token");
 
     if (!token) {
@@ -223,14 +228,21 @@ export async function getAddonConnectionStatus() {
         `${BACKEND_URL}/api/teacher/addon/status`,
         {
             method: "GET",
-
             headers: {
                 Authorization: `Bearer ${token}`
             }
         }
     );
 
-    const result = await response.json();
+    let result;
+
+    try {
+        result = await response.json();
+    } catch {
+        throw new Error(
+            `Server returned an invalid response (${response.status}).`
+        );
+    }
 
     if (!response.ok || result.status === "error") {
         throw new Error(

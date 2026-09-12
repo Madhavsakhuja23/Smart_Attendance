@@ -2,7 +2,9 @@ const express = require("express");
 
 const {
     getAddonStatus,
-    syncAddonClasses
+    syncAddonClasses,
+    getNextAddonCommand,
+    submitAddonCommandResult
 } = require("../controllers/addonController");
 
 const addonAuth = require("../middleware/addonAuthMiddleware");
@@ -25,5 +27,16 @@ router.post(
     syncAddonClasses
 );
 
+router.get(
+    "/commands/next",
+    addonAuth,
+    getNextAddonCommand
+);
+
+router.post(
+    "/commands/result",
+    addonAuth,
+    submitAddonCommandResult
+);
 
 module.exports = router;
