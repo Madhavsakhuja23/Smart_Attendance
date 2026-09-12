@@ -4,8 +4,11 @@ const {
     createTeacher
 } = require("../controllers/adminController");
 
+const protect = require("../middleware/authMiddleware");
+const requireAdmin = require("../middleware/adminMiddleware");
+
 const router = express.Router();
 
-router.post("/teachers", createTeacher);
+router.post("/teachers", protect, requireAdmin, createTeacher);
 
 module.exports = router;

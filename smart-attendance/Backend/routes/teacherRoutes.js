@@ -2,7 +2,9 @@ const express = require("express");
 
 const {
     getClasses,
-    attendanceAction
+    attendanceAction,
+    generatePairingCode,
+    pairAddon
 } = require("../controllers/teacherController");
 
 const protect = require("../middleware/authMiddleware");
@@ -17,5 +19,17 @@ router.get("/classes", protect, getClasses);
 // Attendance actions
 router.post("/attendance", protect, attendanceAction);
 
+// Generate Google Sheets Add-on pairing code
+router.post(
+    "/addon/generate-pairing-code",
+    protect,
+    generatePairingCode
+);
+
+// Pair Google Sheets Add-on
+router.post(
+    "/addon/pair",
+    pairAddon
+);
 
 module.exports = router;

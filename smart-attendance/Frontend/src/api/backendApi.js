@@ -80,6 +80,19 @@ export const loginTeacher = async (email, password) => {
     });
 };
 
+export const registerTeacher = async (name, teacherId, email, password, confirmPassword) => {
+    return request("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+            name,
+            teacherId,
+            email,
+            password,
+            confirmPassword
+        })
+    });
+};
+
 export const getTeacherProfile = async (token) => {
     return request("/api/auth/profile", {
         method: "GET",

@@ -28,11 +28,81 @@ const teacherSchema = new mongoose.Schema(
             required: true
         },
 
+        // ==========================================
+        // OLD APPS SCRIPT CONNECTION
+        // Keep temporarily during migration
+        // ==========================================
         appsScriptUrl: {
             type: String,
-            required: true,
+            required: false,
+            default: null,
             trim: true
         },
+
+        // ==========================================
+        // NEW GOOGLE SHEETS ADD-ON CONNECTION
+        // ==========================================
+
+        googleEmail: {
+            type: String,
+            required: false,
+            default: null,
+            lowercase: true,
+            trim: true
+        },
+
+        googleConnected: {
+            type: Boolean,
+            default: false
+        },
+
+        connectedSpreadsheetId: {
+            type: String,
+            required: false,
+            default: null,
+            trim: true
+        },
+
+        connectedSpreadsheetName: {
+            type: String,
+            required: false,
+            default: null,
+            trim: true
+        },
+
+        // ==========================================
+        // PAIRING
+        // ==========================================
+
+        pairingCodeHash: {
+            type: String,
+            required: false,
+            default: null
+        },
+
+        pairingCodeExpiresAt: {
+            type: Date,
+            required: false,
+            default: null
+        },
+
+        // ==========================================
+        // ADD-ON AUTHENTICATION
+        // ==========================================
+
+        connectionTokenHash: {
+            type: String,
+            required: false,
+            default: null
+        },
+
+        connectionTokenCreatedAt: {
+            type: Date,
+            required: false,
+            default: null
+        },
+
+        // ==========================================
 
         role: {
             type: String,
@@ -49,6 +119,11 @@ const teacherSchema = new mongoose.Schema(
         lastLoginAt: {
             type: Date,
             default: null
+        },
+
+        setupCompleted: {
+            type: Boolean,
+            default: false
         }
     },
     {

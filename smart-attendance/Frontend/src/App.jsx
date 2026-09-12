@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Login from "./components/Login";
+import Register from "./components/Register";
+import SetupPage from "./components/SetupPage";
 import QRGenerator from "./components/QRGenerator";
 import QRScanner from "./components/QRScanner";
 import { getTeacherClasses, getTeacherProfile } from "./api/backendApi";
@@ -12,6 +14,7 @@ function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [classError, setClassError] = useState("");
+  const [authView, setAuthView] = useState("login");
 
   const [className, setClassName] = useState("");
   const [students, setStudents] = useState([]);
@@ -87,6 +90,7 @@ function App() {
     setTeacher(null); setClasses([]); setClassName(""); setStudents([]);
     setSession(null); setScannerOpen(false); setScanHistory([]);
     setFinalized(false); setAttendanceSummary(null); setMessage(""); setClassError("");
+    setAuthView("login");
   };
 
   const handleClassChange = (e) => {
@@ -186,8 +190,28 @@ function App() {
     );
   }
 
-  // ── Login ──
-  if (!teacher) return <Login onLogin={handleLogin} />;
+  // ── Login / Register ──
+  if (!teacher) {
+    if (authView === "register") {
+      return (
+        <Register
+          onRegister={(teacherData) => setTeacher(teacherData)}
+          onSwitchToLogin={() => setAuthView("login")}
+        />
+      );
+    }
+    return (
+      <Login
+        onLogin={handleLogin}
+        onSwitchToRegister={() => setAuthView("register")}
+      />
+    );
+  }
+
+  // ── Setup Required (new teachers with setupCompleted: false) ──
+  if (teacher.setupCompleted === false) {
+    return <SetupPage teacher={teacher} onLogout={handleLogout} />;
+  }
 
   // ── Dashboard ──
   return (

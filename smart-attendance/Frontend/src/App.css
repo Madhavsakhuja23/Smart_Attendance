@@ -45,24 +45,43 @@ button:disabled{cursor:not-allowed;opacity:.5}
 /* ── App Shell ── */
 .app{min-height:100vh;background:var(--bg)}
 
-/* ── Login ── */
-.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(160deg,#1a1814 0%,#292524 100%)}
-.login-card{width:100%;max-width:400px;padding:40px 32px 32px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;animation:enter .5s ease-out}
-.login-card h1{font-size:24px;font-weight:800;color:#fff;text-align:center;margin-bottom:2px}
-.login-subtitle{text-align:center;color:rgba(255,255,255,.45);font-size:13px;font-weight:500;margin-bottom:28px}
-.login-card form{display:flex;flex-direction:column;gap:16px}
-.form-group{display:flex;flex-direction:column;gap:5px}
-.form-group label{font-size:11px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:.5px;text-transform:uppercase}
-.form-group input{height:46px;padding:0 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px;outline:none;transition:border-color .2s}
-.form-group input::placeholder{color:rgba(255,255,255,.25)}
-.form-group input:focus{border-color:var(--teal);box-shadow:0 0 0 2px rgba(13,148,136,.2)}
-.login-card form>button[type="submit"]{height:46px;background:var(--teal);color:#fff;border-radius:8px;font-size:14px;font-weight:700;margin-top:4px;transition:background .2s,transform .1s}
-.login-card form>button[type="submit"]:hover:not(:disabled){background:var(--teal-hover);transform:translateY(-1px)}
-.login-error{padding:10px 12px;background:rgba(225,29,72,.12);border:1px solid rgba(225,29,72,.2);border-radius:6px;color:#fda4af;font-size:13px;font-weight:500}
-.request-access{margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.06);text-align:center}
-.request-access p{color:rgba(255,255,255,.35);font-size:12px;margin-bottom:8px}
-.request-button{padding:8px 16px;border:1px solid rgba(255,255,255,.12)!important;border-radius:6px;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;transition:all .2s}
-.request-button:hover{border-color:rgba(255,255,255,.25)!important;color:#fff}
+/* ── Auth (Login & Register) ── */
+.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;background:radial-gradient(circle at 50% 20%,#1e293b 0%,#0f172a 100%);box-sizing:border-box}
+.login-card{width:100%;max-width:440px;padding:40px 32px 32px;background:rgba(30,41,59,.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.12);border-radius:20px;box-shadow:0 20px 40px -15px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.05);animation:enter .4s ease-out;box-sizing:border-box}
+.register-card{max-width:540px}
+.auth-header{text-align:center;margin-bottom:24px}
+.auth-logo-badge{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--teal),#14b8a6);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;margin-bottom:12px;box-shadow:0 8px 16px rgba(13,148,136,.3)}
+.login-card h1{font-size:24px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:4px}
+.login-subtitle{color:rgba(255,255,255,.55);font-size:13px;font-weight:500;margin:0}
+.login-card form{display:flex;flex-direction:column;gap:16px;width:100%}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}
+.form-group{display:flex;flex-direction:column;gap:6px;width:100%;min-width:0}
+.form-group label{font-size:11px;font-weight:700;color:rgba(255,255,255,.65);letter-spacing:.6px;text-transform:uppercase}
+.form-group input{width:100%;height:44px;padding:0 14px;background:rgba(15,23,42,.6);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#f8fafc;font-size:13px;font-weight:500;outline:none;box-sizing:border-box;transition:all .2s ease}
+.form-group input::placeholder{color:rgba(255,255,255,.28)}
+.form-group input:focus{border-color:var(--teal);background:rgba(15,23,42,.85);box-shadow:0 0 0 3px rgba(13,148,136,.25)}
+.form-group input.input-error{border-color:#f43f5e;box-shadow:0 0 0 2px rgba(244,63,94,.2)}
+.field-hint{font-size:11px;font-weight:500;margin-top:2px}
+.error-hint{color:#fb7185}
+.password-input-wrapper{position:relative;display:flex;align-items:center;width:100%}
+.password-input-wrapper input{padding-right:42px}
+.password-toggle-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.45);cursor:pointer;padding:6px;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:6px;transition:color .2s,opacity .2s;opacity:.7}
+.password-toggle-btn:hover{opacity:1;color:#fff}
+.password-criteria-box{background:rgba(15,23,42,.45);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px 14px;margin-top:2px}
+.criteria-title{display:block;font-size:10px;font-weight:700;letter-spacing:.8px;color:rgba(255,255,255,.45);text-transform:uppercase;margin-bottom:8px}
+.criteria-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.criteria-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:rgba(255,255,255,.35);transition:color .2s ease}
+.criteria-item .criteria-icon{font-size:11px;font-weight:800;width:14px;display:inline-block;text-align:center}
+.criteria-item.met{color:#34d399}
+.criteria-item.met .criteria-icon{color:#34d399}
+.submit-btn{height:46px;background:linear-gradient(135deg,var(--teal),#0f766e);color:#fff;border-radius:10px;font-size:14px;font-weight:700;letter-spacing:.2px;margin-top:6px;box-shadow:0 4px 14px rgba(13,148,136,.3);transition:all .2s ease;border:none;cursor:pointer}
+.submit-btn:hover:not(:disabled){background:linear-gradient(135deg,#14b8a6,var(--teal));transform:translateY(-1px);box-shadow:0 6px 20px rgba(13,148,136,.4)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.login-error{padding:10px 14px;background:rgba(225,29,72,.15);border:1px solid rgba(225,29,72,.3);border-radius:8px;color:#fda4af;font-size:12px;font-weight:600;line-height:1.4;animation:enter .2s ease-out}
+.request-access{margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08);text-align:center}
+.request-access p{color:rgba(255,255,255,.4);font-size:12px;margin-bottom:8px}
+.request-button{padding:8px 18px;border:1px solid rgba(255,255,255,.15)!important;border-radius:8px;color:rgba(255,255,255,.8);font-size:12px;font-weight:600;background:rgba(255,255,255,.04);transition:all .2s ease}
+.request-button:hover{border-color:rgba(255,255,255,.35)!important;background:rgba(255,255,255,.08);color:#fff}
 
 /* ── Header ── */
 .header{width:100%;height:60px;padding:0 max(20px,4%);background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:50}
@@ -327,4 +346,77 @@ tbody tr:hover td{background:rgba(13,148,136,.03)}
   .header-right{justify-content:flex-end}
   .welcome-section h2{font-size:22px}
   .login-card{padding:28px 20px 24px}
+}
+
+/* ══════════════════════════════════
+   PHASE 2A — Responsive Form Row
+   ══════════════════════════════════ */
+
+@media(max-width:540px){
+  .form-row{grid-template-columns:1fr}
+  .criteria-grid{grid-template-columns:1fr}
+  .register-card{max-width:100%}
+}
+
+/* ══════════════════════════════════
+   PHASE 2A — Setup Page
+   ══════════════════════════════════ */
+
+.setup-page{min-height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center}
+.setup-container{width:min(680px,92%);padding:28px 0 48px}
+
+/* Setup Header */
+.setup-header{display:flex;justify-content:space-between;align-items:center;padding:16px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px}
+.setup-brand{display:flex;align-items:center;gap:10px}
+.setup-brand h1{font-size:16px;font-weight:800;color:var(--text)}
+
+/* Welcome Card */
+.setup-welcome-card{display:flex;align-items:flex-start;gap:16px;padding:24px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:20px;box-shadow:var(--shadow);animation:enter .4s ease-out}
+.setup-welcome-icon{width:48px;height:48px;border-radius:12px;background:var(--teal-soft);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.setup-welcome-card h2{font-size:20px;font-weight:800;color:var(--text);margin:0 0 6px}
+.setup-welcome-card p{margin:0;color:var(--text-3);font-size:13px;line-height:1.5}
+
+/* Steps Card */
+.setup-steps-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;margin-bottom:20px;box-shadow:var(--shadow);animation:enter .4s ease-out .06s both}
+.setup-steps-heading{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.setup-steps-heading h3{font-size:15px;font-weight:700;color:var(--text)}
+.setup-steps-heading p{margin:1px 0 0;font-size:12px;color:var(--text-4)}
+.setup-steps-list{display:flex;flex-direction:column;gap:10px}
+.setup-step{display:flex;align-items:center;gap:14px;padding:16px 18px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);transition:background .15s}
+.setup-step:hover{background:var(--teal-soft)}
+.setup-step .step-number{width:32px;height:32px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.step-content{flex:1}
+.step-content h4{margin:0 0 2px;font-size:13px;font-weight:700;color:var(--text)}
+.step-content p{margin:0;font-size:11px;color:var(--text-4)}
+.step-status{padding:4px 10px;border-radius:100px;font-size:9px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.step-status.coming-soon{background:var(--amber-bg);color:#92400e}
+
+/* Info Banner */
+.setup-info-banner{display:flex;align-items:flex-start;gap:12px;padding:16px 20px;background:var(--teal-soft);border:1px solid rgba(13,148,136,.15);border-radius:var(--r);margin-bottom:20px;animation:enter .4s ease-out .12s both}
+.setup-info-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.setup-info-banner strong{display:block;font-size:13px;font-weight:700;color:var(--teal);margin-bottom:3px}
+.setup-info-banner p{margin:0;font-size:12px;color:var(--text-3);line-height:1.5}
+
+/* Account Card */
+.setup-account-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--shadow);animation:enter .4s ease-out .18s both}
+.setup-account-card h4{margin:0 0 14px;font-size:13px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px}
+.setup-account-details{display:grid;grid-template-columns:repeat(4,1fr)}
+.setup-account-details>div{padding:10px 14px;border-right:1px solid var(--border-light)}
+.setup-account-details>div:last-child{border-right:none}
+.setup-account-details span{display:block;margin-bottom:4px;font-size:9px;font-weight:700;letter-spacing:.8px;color:var(--text-4);text-transform:uppercase}
+.setup-account-details strong{display:block;font-size:13px;font-weight:600;color:var(--text-2);overflow-wrap:anywhere}
+.setup-status-active{color:var(--green)!important}
+
+/* Setup Responsive */
+@media(max-width:650px){
+  .setup-welcome-card{flex-direction:column}
+  .setup-account-details{grid-template-columns:1fr}
+  .setup-account-details>div{border-right:none;border-bottom:1px solid var(--border-light);padding:8px 0}
+  .setup-account-details>div:last-child{border-bottom:none;padding-bottom:0}
+  .setup-step{flex-wrap:wrap}
+  .step-status{margin-left:46px}
+}
+@media(max-width:430px){
+  .setup-container{padding:16px 0 32px}
+  .setup-welcome-card,.setup-steps-card,.setup-account-card{padding:16px}
 }
