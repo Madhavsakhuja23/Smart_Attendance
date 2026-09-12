@@ -432,6 +432,41 @@ const getAttendanceCommandResult = async (
     }
 };
 
+const disconnectAddon = async (req, res) => {
+  try {
+    const teacher = req.teacher;
+
+    if (!teacher) {
+      return res.status(401).json({
+        status: "error",
+        message: "Teacher authentication failed"
+      });
+    }
+
+    teacher.googleConnected = false;
+    teacher.connectedSpreadsheetId = null;
+    teacher.connectedSpreadsheetName = null;
+    teacher.connectionTokenHash = null;
+    teacher.connectionTokenCreatedAt = null;
+    teacher.connectedClasses = [];
+    teacher.setupCompleted = false;
+
+    await teacher.save();
+
+    return res.json({
+      status: "success",
+      message: "Smart Attendance disconnected successfully."
+    });
+  } catch (error) {
+    console.error("disconnectAddon error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to disconnect Smart Attendance."
+    });
+  }
+};
+
 module.exports = {
     getAddonStatus,
     syncAddonClasses,
@@ -441,5 +476,7 @@ module.exports = {
     submitAddonCommandResult,
 
     createAttendanceCommand,
-    getAttendanceCommandResult
+    getAttendanceCommandResult,
+
+    disconnectAddon
 };

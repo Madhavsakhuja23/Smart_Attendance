@@ -54,11 +54,6 @@ router.get(
     getTeacherAddonStatus
 );
 
-router.post(
-    "/attendance/command",
-    protect,
-    createAttendanceCommand
-);
 
 // ==========================================
 // ATTENDANCE COMMAND BRIDGE

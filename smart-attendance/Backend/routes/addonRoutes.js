@@ -4,7 +4,8 @@ const {
     getAddonStatus,
     syncAddonClasses,
     getNextAddonCommand,
-    submitAddonCommandResult
+    submitAddonCommandResult,
+    disconnectAddon
 } = require("../controllers/addonController");
 
 const addonAuth = require("../middleware/addonAuthMiddleware");
@@ -38,5 +39,7 @@ router.post(
     addonAuth,
     submitAddonCommandResult
 );
+
+router.post("/disconnect", addonAuth, disconnectAddon);
 
 module.exports = router;
