@@ -26,7 +26,8 @@ const attendanceCommandSchema = new mongoose.Schema(
                 "FINALIZE_DAY",
                 "GET_ATTENDANCE_STATUS",
                 "SEND_EMAILS",
-                "GET_EMAIL_QUEUE_STATUS"
+                "GET_EMAIL_QUEUE_STATUS",
+                "SYNC_CLASSES"
             ]
         },
 

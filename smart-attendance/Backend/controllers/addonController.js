@@ -336,7 +336,8 @@ if (!teacher) {
             "FINALIZE_DAY",
             "GET_ATTENDANCE_STATUS",
             "SEND_EMAILS",
-            "GET_EMAIL_QUEUE_STATUS"
+            "GET_EMAIL_QUEUE_STATUS",
+            "SYNC_CLASSES"
         ];
 
         if (!allowedTypes.includes(type)) {

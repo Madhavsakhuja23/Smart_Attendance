@@ -203,6 +203,36 @@ export function finalizeDay({
     );
 }
 
+export async function getAttendanceCommandResult(
+    commandId
+) {
+    const token =
+        sessionStorage.getItem("token");
+
+    const response =
+        await fetch(
+            `${BACKEND_URL}/api/teacher/attendance/command/${commandId}`,
+            {
+                method: "GET",
+                headers: {
+                    Authorization:
+                        `Bearer ${token}`
+                }
+            }
+        );
+
+    const data =
+        await response.json();
+
+    if (!response.ok) {
+        throw new Error(
+            data.message ||
+            "Unable to get command result."
+        );
+    }
+
+    return data;
+}
 
 // =========================================================
 // ATTENDANCE STATUS

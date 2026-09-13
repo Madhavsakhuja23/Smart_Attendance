@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 
 import {
     generatePairingCode,
-    getAddonConnectionStatus
+    getAddonConnectionStatus,
+    createAttendanceCommand,
+    getAttendanceCommandResult
 } from "../services/api";
 
 
@@ -29,32 +31,156 @@ export default function SetupPage({
     // CHECK CURRENT CONNECTION
     // ==========================================
 
-    const checkConnection = async () => {
+const checkConnection = async () => {
+
     setCheckingConnection(true);
     setError("");
 
     try {
-        const result = await getAddonConnectionStatus();
 
-        if (result.connected) {
-    setConnected(true);
+        // ==========================================
+        // STEP 1: CHECK CONNECTION
+        // ==========================================
 
-    setConnectionInfo({
-        ...result.teacher,
-        classes: result.classes || []
-    });
-} else {
-    setConnected(false);
-    setConnectionInfo(null);
-}
+        const result =
+            await getAddonConnectionStatus();
+
+
+        if (!result.connected) {
+
+            setConnected(false);
+            setConnectionInfo(null);
+
+            return;
+        }
+
+
+        // ==========================================
+        // STEP 2: CONNECTION EXISTS
+        // ==========================================
+
+        setConnected(true);
+
+
+        // ==========================================
+        // STEP 3: ASK ADD-ON TO SYNC CLASSES
+        // ==========================================
+
+        const command =
+            await createAttendanceCommand(
+                "SYNC_CLASSES",
+                {}
+            );
+
+
+        if (
+            !command ||
+            !command.commandId
+        ) {
+            throw new Error(
+                "Unable to start class synchronization."
+            );
+        }
+
+
+        // ==========================================
+        // STEP 4: WAIT FOR ADD-ON
+        // ==========================================
+
+        let commandResult = null;
+
+        const maxAttempts = 40;
+
+        for (
+            let attempt = 0;
+            attempt < maxAttempts;
+            attempt++
+        ) {
+
+            await new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        1000
+                    )
+            );
+
+
+            commandResult =
+                await getAttendanceCommandResult(
+                    command.commandId
+                );
+
+
+            if (
+                commandResult.commandStatus ===
+                "COMPLETED"
+            ) {
+                break;
+            }
+
+
+            if (
+                commandResult.commandStatus ===
+                "FAILED"
+            ) {
+                throw new Error(
+                    commandResult.errorMessage ||
+                    "Class synchronization failed."
+                );
+            }
+        }
+
+
+        // ==========================================
+        // STEP 5: VERIFY RESULT
+        // ==========================================
+
+        if (
+            !commandResult ||
+            commandResult.commandStatus !==
+            "COMPLETED"
+        ) {
+            throw new Error(
+                "Class synchronization timed out. Please make sure the Smart Attendance add-on is open in Google Sheets."
+            );
+        }
+
+
+        const syncedClasses =
+            commandResult.result?.classes || [];
+
+
+        // ==========================================
+        // STEP 6: UPDATE UI
+        // ==========================================
+
+        setConnectionInfo({
+            ...result.teacher,
+            classes:
+                syncedClasses
+        });
+
+
+        setConnected(true);
+
 
     } catch (error) {
+
+        console.error(
+            "Connection/sync error:",
+            error
+        );
+
         setError(
             error.message ||
             "Unable to check connection."
         );
+
     } finally {
+
         setCheckingConnection(false);
+
     }
 };
 
