@@ -47,6 +47,11 @@ function App() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [showFinalizeModal, setShowFinalizeModal] = useState(false);
   const [setupJustCompleted, setSetupJustCompleted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     (async () => {
@@ -589,67 +594,119 @@ function App() {
   return (
     <div className="app-shell">
       {/* Navigation Header */}
-      <header className="header">
-        <div className="brand-area" onClick={() => navigate("/")} role="button" tabIndex={0}>
-          <div className="brand-icon">✓</div>
-          <div>
-            <h1>Smart Attendance</h1>
-            <p>Google Sheets Attendance System</p>
+      <header className={`header ${mobileMenuOpen ? "menu-open" : ""}`}>
+        <div className="header-container">
+          <div
+            className="brand-area"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              navigate("/");
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                setMobileMenuOpen(false);
+                navigate("/");
+              }
+            }}
+          >
+            <div className="brand-icon">✓</div>
+            <div>
+              <h1>Smart Attendance</h1>
+              <p>Google Sheets Attendance System</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            onClick={() => setMobileMenuOpen(prev => !prev)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? "✕" : "☰"}
+          </button>
+
+          <div className={`header-right ${mobileMenuOpen ? "mobile-open" : ""}`}>
+            {teacher ? (
+              <>
+                <nav className="nav-links">
+                  <Link
+                    to="/dashboard"
+                    className={
+                      location.pathname === "/dashboard" || location.pathname === "/"
+                        ? "nav-link active"
+                        : "nav-link"
+                    }
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/settings"
+                    className={location.pathname === "/settings" ? "nav-link active" : "nav-link"}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Settings
+                  </Link>
+                </nav>
+                <div className="teacher-mini">
+                  <div className="teacher-avatar">{teacher.name?.charAt(0)?.toUpperCase()}</div>
+                  <div className="teacher-info-text">
+                    <strong>{teacher.name}</strong>
+                    <span>{teacher.teacherId}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="logout-button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <div className="auth-nav-buttons">
+                {location.pathname !== "/login" && (
+                  <button
+                    type="button"
+                    className="nav-auth-btn"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/login");
+                    }}
+                  >
+                    Sign In
+                  </button>
+                )}
+                {location.pathname !== "/register" && (
+                  <button
+                    type="button"
+                    className="nav-auth-btn primary-auth-btn"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/register");
+                    }}
+                  >
+                    Create Account
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
-
-        <div className="header-right">
-          {teacher ? (
-            <>
-              <nav className="nav-links">
-                <Link
-                  to="/dashboard"
-                  className={
-                    location.pathname === "/dashboard" || location.pathname === "/"
-                      ? "nav-link active"
-                      : "nav-link"
-                  }
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/settings"
-                  className={location.pathname === "/settings" ? "nav-link active" : "nav-link"}
-                >
-                  Settings
-                </Link>
-              </nav>
-              <div className="teacher-mini">
-                <div className="teacher-avatar">{teacher.name?.charAt(0)?.toUpperCase()}</div>
-                <div>
-                  <strong>{teacher.name}</strong>
-                  <span>{teacher.teacherId}</span>
-                </div>
-              </div>
-              <button className="logout-button" onClick={handleLogout}>
-                Logout
-              </button>
-            </>
-          ) : (
-            <div className="auth-nav-buttons">
-              <button
-                type="button"
-                className={`nav-auth-btn ${location.pathname === "/login" ? "active" : ""}`}
-                onClick={() => navigate("/login")}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                className={`nav-auth-btn ${location.pathname === "/register" ? "active" : ""}`}
-                onClick={() => navigate("/register")}
-              >
-                Create Account
-              </button>
-            </div>
-          )}
-        </div>
       </header>
+      {mobileMenuOpen && (
+        <div
+          className="mobile-menu-backdrop"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Route Views */}
       <div className="route-content">
