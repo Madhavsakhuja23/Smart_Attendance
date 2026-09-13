@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import BrandLogo from "./BrandLogo";
 
 import {
     generatePairingCode,
@@ -255,11 +256,7 @@ const checkConnection = async () => {
                 <div className="setup-header">
 
                     <div className="setup-brand">
-
-                        <div className="brand-icon">
-                            ✓
-                        </div>
-
+                        <BrandLogo className="brand-icon" />
                         <h1>
                             Smart Attendance
                         </h1>

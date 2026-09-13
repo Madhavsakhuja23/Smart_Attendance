@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { loginTeacher } from "../api/backendApi";
+import BrandLogo from "./BrandLogo";
 
 export default function Login({ onLogin, onSwitchToRegister }) {
   const [email, setEmail] = useState("");
@@ -34,7 +35,7 @@ export default function Login({ onLogin, onSwitchToRegister }) {
       <div className="auth-card">
         {/* Brand Header */}
         <div className="auth-brand-header">
-          <div className="auth-logo-badge">✓</div>
+          <BrandLogo className="auth-logo-badge" />
           <h1 className="auth-title">Smart Attendance</h1>
           <p className="auth-subtitle">Teacher Portal Authentication</p>
         </div>

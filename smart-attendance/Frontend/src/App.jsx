@@ -6,6 +6,7 @@ import SetupPage from "./components/SetupPage";
 import Settings from "./components/Settings";
 import Footer from "./components/Footer";
 import ConfirmModal from "./components/ConfirmModal";
+import BrandLogo from "./components/BrandLogo";
 import QRGenerator from "./components/QRGenerator";
 import QRScanner from "./components/QRScanner";
 import { useToast } from "./context/ToastContext";
@@ -248,6 +249,7 @@ function App() {
   if (checkingAuth) {
     return (
       <div className="auth-loading">
+        <BrandLogo className="auth-logo-badge" />
         <div className="auth-loading-spinner" />
         <h2>Smart Attendance</h2>
         <p>Checking your session credentials...</p>
@@ -611,7 +613,7 @@ function App() {
               }
             }}
           >
-            <div className="brand-icon">✓</div>
+            <BrandLogo className="brand-icon" />
             <div>
               <h1>Smart Attendance</h1>
               <p>Google Sheets Attendance System</p>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { registerTeacher } from "../api/backendApi";
+import BrandLogo from "./BrandLogo";
 
 export default function Register({ onRegister, onSwitchToLogin }) {
   const [name, setName] = useState("");
@@ -84,7 +85,7 @@ export default function Register({ onRegister, onSwitchToLogin }) {
       <div className="auth-card register-card">
         {/* Brand Header */}
         <div className="auth-brand-header">
-          <div className="auth-logo-badge">✓</div>
+          <BrandLogo className="auth-logo-badge" />
           <h1 className="auth-title">Smart Attendance</h1>
           <p className="auth-subtitle">Create Your Teacher Account</p>
         </div>

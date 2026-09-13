@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import BrandLogo from "./BrandLogo";
 
 export default function Footer() {
   return (
@@ -6,7 +7,7 @@ export default function Footer() {
       <div className="footer-container">
         <div className="footer-brand">
           <div className="footer-brand-header">
-            <div className="footer-logo">✓</div>
+            <BrandLogo className="footer-logo" />
             <h4>Smart Attendance</h4>
           </div>
           <p className="footer-description">

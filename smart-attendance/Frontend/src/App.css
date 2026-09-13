@@ -372,7 +372,7 @@ h5 { font-size: 0.92rem; }
 /* Header */
 .header {
   width: 100%;
-  height: 64px;
+  height: 68px;
   background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -417,18 +417,28 @@ h5 { font-size: 0.92rem; }
 }
 
 .brand-icon {
-  width: 36px;
-  height: 36px;
+  width: 52px;
+  height: 52px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 800;
-  box-shadow: 0 4px 10px var(--primary-glow);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   flex-shrink: 0;
+  overflow: hidden;
+  padding: 2px;
+}
+
+.brand-icon img,
+.auth-logo-badge img,
+.footer-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: inherit;
+  display: block;
 }
 
 .brand-area h1 {
@@ -686,18 +696,18 @@ h5 { font-size: 0.92rem; }
 }
 
 .auth-logo-badge {
-  width: 46px;
-  height: 46px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-  color: #ffffff;
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-default);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.35rem;
-  font-weight: 800;
-  margin-bottom: 12px;
-  box-shadow: 0 6px 16px var(--primary-glow);
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  padding: 4px;
 }
 
 .auth-title {
@@ -2075,16 +2085,16 @@ tbody tr:hover td {
 }
 
 .footer-logo {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 800;
+  overflow: hidden;
+  padding: 2px;
 }
 
 .footer-brand h4 {
@@ -2991,7 +3001,7 @@ tbody tr:hover td {
     flex-direction: column;
     align-items: stretch;
     position: absolute;
-    top: 64px;
+    top: 68px;
     left: 0;
     right: 0;
     background: var(--bg-surface);
