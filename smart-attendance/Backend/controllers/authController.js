@@ -57,30 +57,6 @@ const validatePassword = (password) => {
     return { valid: true };
 };
 
-// =========================
-// BACKWARD-COMPAT HELPER
-// =========================
-
-/**
- * Compute effective setup status.
- *
- * - If setupCompleted is explicitly true → true
- * - If setupCompleted is falsy but appsScriptUrl exists → true (legacy Phase 1 teacher)
- * - Otherwise → false (new self-registered teacher)
- */
-const isSetupComplete = (teacher) => {
-    if (teacher.setupCompleted === true) {
-        return true;
-    }
-
-    // Legacy Phase 1 teachers have a valid appsScriptUrl but no setupCompleted field
-    if (teacher.appsScriptUrl && teacher.appsScriptUrl.trim().length > 0) {
-        return true;
-    }
-
-    return false;
-};
-
 
 // =========================
 // REGISTER
@@ -149,7 +125,7 @@ const registerTeacher = async (req, res) => {
         // Hash password
         const passwordHash = await bcrypt.hash(password, 10);
 
-        // Create teacher — no appsScriptUrl, setupCompleted = false
+        // Create teacher
         const teacher = await Teacher.create({
             teacherId,
             name,
@@ -243,14 +219,11 @@ const loginTeacher = async (req, res) => {
             });
         }
 
-        // Update login time (fire-and-forget — don't wait for save)
+        // Update login time
         teacher.lastLoginAt = new Date();
         teacher.save().catch((err) => {
             console.error("Failed to update lastLoginAt:", err.message);
         });
-
-        // Compute effective setup status (backward-compat for Phase 1 teachers)
-        const setupCompleted = isSetupComplete(teacher);
 
         // Create JWT
         const token = jwt.sign(
@@ -273,9 +246,10 @@ const loginTeacher = async (req, res) => {
                 name: teacher.name,
                 email: teacher.email,
                 role: teacher.role,
-                appsScriptUrl: teacher.appsScriptUrl,
                 lastLoginAt: teacher.lastLoginAt,
-                setupCompleted
+                setupCompleted: teacher.setupCompleted,
+                googleConnected: teacher.googleConnected,
+                connectedSpreadsheetName: teacher.connectedSpreadsheetName
             }
         });
 
@@ -307,15 +281,9 @@ const getProfile = async (req, res) => {
             });
         }
 
-        // Compute effective setup status (backward-compat for Phase 1 teachers)
-        const setupCompleted = isSetupComplete(teacher);
-
         return res.status(200).json({
             status: "success",
-            teacher: {
-                ...teacher.toObject(),
-                setupCompleted
-            }
+            teacher
         });
 
     } catch (error) {
@@ -328,8 +296,76 @@ const getProfile = async (req, res) => {
     }
 };
 
+
+// =========================
+// CHANGE PASSWORD
+// =========================
+
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+        if (!currentPassword || !newPassword || !confirmNewPassword) {
+            return res.status(400).json({
+                status: "error",
+                message: "All fields are required."
+            });
+        }
+
+        if (newPassword !== confirmNewPassword) {
+            return res.status(400).json({
+                status: "error",
+                message: "New passwords do not match."
+            });
+        }
+
+        const passwordValidation = validatePassword(newPassword);
+        if (!passwordValidation.valid) {
+            return res.status(400).json({
+                status: "error",
+                message: passwordValidation.message
+            });
+        }
+
+        const teacher = await Teacher.findOne({
+            teacherId: req.teacher.teacherId
+        });
+
+        if (!teacher) {
+            return res.status(404).json({
+                status: "error",
+                message: "Teacher not found."
+            });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, teacher.passwordHash);
+        if (!isMatch) {
+            return res.status(401).json({
+                status: "error",
+                message: "Current password is incorrect."
+            });
+        }
+
+        teacher.passwordHash = await bcrypt.hash(newPassword, 10);
+        await teacher.save();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Password changed successfully."
+        });
+
+    } catch (error) {
+        console.error("Change password error:", error);
+        return res.status(500).json({
+            status: "error",
+            message: "Server error while changing password."
+        });
+    }
+};
+
 module.exports = {
     registerTeacher,
     loginTeacher,
-    getProfile
+    getProfile,
+    changePassword
 };

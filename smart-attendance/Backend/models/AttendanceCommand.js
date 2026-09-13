@@ -65,8 +65,7 @@ const attendanceCommandSchema = new mongoose.Schema(
 
         expiresAt: {
             type: Date,
-            default: null,
-            index: true
+            default: null
         }
     },
     {
@@ -74,8 +73,12 @@ const attendanceCommandSchema = new mongoose.Schema(
     }
 );
 
-module.exports =
-    mongoose.model(
-        "AttendanceCommand",
-        attendanceCommandSchema
-    );
+// Compound index for command polling
+attendanceCommandSchema.index({ teacherId: 1, status: 1, createdAt: 1 });
+// TTL index: auto-delete expired commands after 24 hours
+attendanceCommandSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 86400 });
+
+module.exports = mongoose.model(
+    "AttendanceCommand",
+    attendanceCommandSchema
+);

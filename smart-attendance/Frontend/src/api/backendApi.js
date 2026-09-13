@@ -110,3 +110,26 @@ export const getTeacherClasses = async (token) => {
         }
     });
 };
+
+export const disconnectGoogleSheets = async (token) => {
+    return request("/api/teacher/addon/disconnect", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+};
+
+export const changePassword = async (token, currentPassword, newPassword, confirmNewPassword) => {
+    return request("/api/auth/change-password", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            currentPassword,
+            newPassword,
+            confirmNewPassword
+        })
+    });
+};

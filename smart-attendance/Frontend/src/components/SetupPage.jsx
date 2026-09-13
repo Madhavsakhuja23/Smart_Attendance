@@ -11,8 +11,9 @@ import {
 export default function SetupPage({
     teacher,
     onLogout,
-    onSetupComplete
-}) {
+    onSetupComplete,
+    onGoToDashboard
+})  {
 
     const [pairingCode, setPairingCode] = useState("");
     const [expiresAt, setExpiresAt] = useState("");
@@ -152,17 +153,27 @@ const checkConnection = async () => {
 
 
         // ==========================================
-        // STEP 6: UPDATE UI
+        // STEP 6: UPDATE UI & NOTIFY PARENT
         // ==========================================
 
-        setConnectionInfo({
-            ...result.teacher,
-            classes:
-                syncedClasses
-        });
+        const updatedTeacherData = {
+            ...(result.teacher || {}),
+            classes: syncedClasses,
+            setupCompleted: true,
+            googleConnected: true,
+        };
 
-
+        setConnectionInfo(updatedTeacherData);
         setConnected(true);
+
+        // Immediately synchronize the parent App state.
+        // This removes the need for a page refresh after Check Connection.
+        if (typeof onSetupComplete === "function") {
+            onSetupComplete({
+                connected: true,
+                teacher: updatedTeacherData,
+            });
+        }
 
 
     } catch (error) {
@@ -371,16 +382,12 @@ const checkConnection = async () => {
                             </p>
 
                             <button
-                                onClick={() =>
-                                    onSetupComplete &&
-                                    onSetupComplete({
-                                        connected: true,
-                                        teacher: connectionInfo
-                                    })
-                                }
-                            >
-                                Go to Dashboard
-                            </button>
+    className="btn btn-primary"
+    style={{ marginTop: "16px" }}
+    onClick={onGoToDashboard}
+>
+    Go to Dashboard
+</button>
 
                         </div>
 
@@ -493,45 +500,22 @@ const checkConnection = async () => {
 
 
                                     {pairingCode && (
-
-                                        <div
-                                            style={{
-                                                marginTop: "15px"
-                                            }}
-                                        >
-
-                                            <div
-                                                style={{
-                                                    fontSize: "12px",
-                                                    marginBottom: "5px"
-                                                }}
-                                            >
+                                        <div className="pairing-code-box">
+                                            <div className="pairing-code-label">
                                                 Your pairing code:
                                             </div>
-
-                                            <div
-                                                style={{
-                                                    fontSize: "28px",
-                                                    fontWeight: "700",
-                                                    letterSpacing: "2px"
-                                                }}
-                                            >
+                                            <div className="pairing-code-display">
                                                 {pairingCode}
                                             </div>
-
                                             {expiresAt && (
-
-                                                <small>
+                                                <small className="pairing-code-expiry">
                                                     Expires at:{" "}
                                                     {new Date(
                                                         expiresAt
                                                     ).toLocaleString()}
                                                 </small>
-
                                             )}
-
                                         </div>
-
                                     )}
 
                                 </div>
@@ -590,6 +574,7 @@ const checkConnection = async () => {
                                     }
                                 </span>
 
+ 
                             </div>
 
                         </div>

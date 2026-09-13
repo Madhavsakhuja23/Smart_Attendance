@@ -169,7 +169,7 @@ const getNextAddonCommand = async (req, res) => {
                     sort: {
                         createdAt: 1
                     },
-                    new: true
+                    returnDocument: "after"
                 }
             );
 
@@ -292,7 +292,7 @@ const submitAddonCommandResult = async (req, res) => {
             status: "error",
             message:
                 "Unable to store command result."
-        });
+            });
     }
 };
 
@@ -304,25 +304,25 @@ const createAttendanceCommand = async (req, res) => {
     try {
         const authTeacher = req.teacher;
 
-if (!authTeacher || !authTeacher.teacherId) {
-    return res.status(401).json({
-        status: "error",
-        message: "Teacher authentication required."
-    });
-}
+        if (!authTeacher || !authTeacher.teacherId) {
+            return res.status(401).json({
+                status: "error",
+                message: "Teacher authentication required."
+            });
+        }
 
-// Get the complete teacher document from MongoDB
-const teacher = await Teacher.findOne({
-    teacherId: authTeacher.teacherId,
-    status: "active"
-});
+        // Get the complete teacher document from MongoDB
+        const teacher = await Teacher.findOne({
+            teacherId: authTeacher.teacherId,
+            status: "active"
+        });
 
-if (!teacher) {
-    return res.status(404).json({
-        status: "error",
-        message: "Teacher not found."
-    });
-}
+        if (!teacher) {
+            return res.status(404).json({
+                status: "error",
+                message: "Teacher not found."
+            });
+        }
 
         const {
             type,
@@ -433,6 +433,7 @@ const getAttendanceCommandResult = async (
     }
 };
 
+// Disconnect initiated from Add-on (uses req.teacher set by addonAuthMiddleware)
 const disconnectAddon = async (req, res) => {
   try {
     const teacher = req.teacher;
@@ -468,6 +469,42 @@ const disconnectAddon = async (req, res) => {
   }
 };
 
+// Disconnect initiated from Website (uses req.teacher set by protect JWT middleware)
+const disconnectFromWebsite = async (req, res) => {
+  try {
+    const teacher = await Teacher.findOne({ teacherId: req.teacher.teacherId });
+
+    if (!teacher) {
+      return res.status(404).json({
+        status: "error",
+        message: "Teacher not found"
+      });
+    }
+
+    teacher.googleConnected = false;
+    teacher.connectedSpreadsheetId = null;
+    teacher.connectedSpreadsheetName = null;
+    teacher.connectionTokenHash = null;
+    teacher.connectionTokenCreatedAt = null;
+    teacher.connectedClasses = [];
+    teacher.setupCompleted = false;
+
+    await teacher.save();
+
+    return res.json({
+      status: "success",
+      message: "Disconnected Google Sheets successfully."
+    });
+  } catch (error) {
+    console.error("disconnectFromWebsite error:", error);
+
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to disconnect Google Sheets."
+    });
+  }
+};
+
 module.exports = {
     getAddonStatus,
     syncAddonClasses,
@@ -479,5 +516,6 @@ module.exports = {
     createAttendanceCommand,
     getAttendanceCommandResult,
 
-    disconnectAddon
+    disconnectAddon,
+    disconnectFromWebsite
 };

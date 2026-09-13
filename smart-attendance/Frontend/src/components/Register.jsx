@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { registerTeacher } from "../api/backendApi";
 
 export default function Register({ onRegister, onSwitchToLogin }) {
@@ -72,53 +73,81 @@ export default function Register({ onRegister, onSwitchToLogin }) {
       sessionStorage.setItem("token", res.token);
       onRegister(res.teacher);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card register-card">
-        <div className="auth-header">
+    <div className="auth-page-container">
+      <div className="auth-card register-card">
+        {/* Brand Header */}
+        <div className="auth-brand-header">
           <div className="auth-logo-badge">✓</div>
-          <h1>Smart Attendance</h1>
-          <p className="login-subtitle">Create Your Teacher Account</p>
+          <h1 className="auth-title">Smart Attendance</h1>
+          <p className="auth-subtitle">Create Your Teacher Account</p>
         </div>
 
-        <form onSubmit={handleSubmit} noValidate>
+        {/* Tab Switcher */}
+        <div className="auth-tab-switch" role="tablist">
+          <button
+            type="button"
+            className="auth-tab"
+            role="tab"
+            aria-selected="false"
+            onClick={onSwitchToLogin}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            className="auth-tab active"
+            role="tab"
+            aria-selected="true"
+          >
+            Create Account
+          </button>
+        </div>
+
+        {/* Registration Form */}
+        <form onSubmit={handleSubmit} className="auth-form" noValidate>
           <div className="form-row">
             <div className="form-group">
-              <label>Full Name</label>
+              <label htmlFor="reg-name">FULL NAME</label>
               <input
+                id="reg-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Dr. John Doe"
+                placeholder="Dr. Jane Smith"
+                autoComplete="name"
                 required
               />
             </div>
             <div className="form-group">
-              <label>Teacher ID</label>
+              <label htmlFor="reg-teacherid">TEACHER / STAFF ID</label>
               <input
+                id="reg-teacherid"
                 type="text"
                 value={teacherId}
                 onChange={(e) => setTeacherId(e.target.value)}
-                placeholder="T001"
+                placeholder="T-1042"
                 required
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label>Email Address</label>
+            <label htmlFor="reg-email">INSTITUTIONAL EMAIL</label>
             <input
+              id="reg-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@university.edu"
+              placeholder="jsmith@university.edu"
               className={email && !isEmailFormatValid ? "input-error" : ""}
+              autoComplete="email"
               required
             />
             {email && !isEmailFormatValid && (
@@ -128,13 +157,15 @@ export default function Register({ onRegister, onSwitchToLogin }) {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Password</label>
+              <label htmlFor="reg-password">PASSWORD</label>
               <div className="password-input-wrapper">
                 <input
+                  id="reg-password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create strong password"
+                  autoComplete="new-password"
                   required
                 />
                 <button
@@ -142,6 +173,7 @@ export default function Register({ onRegister, onSwitchToLogin }) {
                   className="password-toggle-btn"
                   onClick={() => setShowPassword(!showPassword)}
                   title={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   tabIndex={-1}
                 >
                   {showPassword ? "👁️" : "👁️‍🗨️"}
@@ -150,16 +182,16 @@ export default function Register({ onRegister, onSwitchToLogin }) {
             </div>
 
             <div className="form-group">
-              <label>Confirm Password</label>
+              <label htmlFor="reg-confirm-password">CONFIRM PASSWORD</label>
               <div className="password-input-wrapper">
                 <input
+                  id="reg-confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter password"
-                  className={
-                    confirmPassword && password !== confirmPassword ? "input-error" : ""
-                  }
+                  className={confirmPassword && password !== confirmPassword ? "input-error" : ""}
+                  autoComplete="new-password"
                   required
                 />
                 <button
@@ -167,6 +199,7 @@ export default function Register({ onRegister, onSwitchToLogin }) {
                   className="password-toggle-btn"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   title={showConfirmPassword ? "Hide password" : "Show password"}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   tabIndex={-1}
                 >
                   {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
@@ -201,23 +234,48 @@ export default function Register({ onRegister, onSwitchToLogin }) {
               </div>
               <div className={`criteria-item ${passwordChecks.hasSpecial ? "met" : ""}`}>
                 <span className="criteria-icon">{passwordChecks.hasSpecial ? "✓" : "○"}</span>
-                <span>Special char (!@#$%^&*)</span>
+                <span>Special character (!@#$%^&*)</span>
               </div>
             </div>
           </div>
 
-          {error && <div className="login-error">⚠ {error}</div>}
+          {error && (
+            <div className="alert error auth-alert" role="alert">
+              <span>⚠ {error}</span>
+            </div>
+          )}
 
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? "Creating Account..." : "Create Account"}
+          <button type="submit" className="btn btn-primary auth-submit-btn" disabled={loading}>
+            {loading ? (
+              <span className="btn-loading-content">
+                <span className="spinner" />
+                Creating Account...
+              </span>
+            ) : (
+              "Create Account"
+            )}
           </button>
         </form>
 
-        <div className="request-access">
-          <p>Already have an account?</p>
-          <button type="button" className="request-button" onClick={onSwitchToLogin}>
-            Login Instead
-          </button>
+        {/* Switch Prompt */}
+        <div className="auth-footer-prompt">
+          <p>
+            Already have an account?{" "}
+            <button
+              type="button"
+              className="auth-link-btn"
+              onClick={onSwitchToLogin}
+            >
+              Sign in here
+            </button>
+          </p>
+        </div>
+
+        {/* Legal Disclaimer */}
+        <div className="auth-legal-note">
+          By registering, you agree to our{" "}
+          <Link to="/terms">Terms of Service</Link> and{" "}
+          <Link to="/privacy">Privacy Policy</Link>.
         </div>
       </div>
     </div>

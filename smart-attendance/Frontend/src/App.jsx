@@ -1,20 +1,38 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import SetupPage from "./components/SetupPage";
+import Settings from "./components/Settings";
+import Footer from "./components/Footer";
+import ConfirmModal from "./components/ConfirmModal";
 import QRGenerator from "./components/QRGenerator";
 import QRScanner from "./components/QRScanner";
+import { useToast } from "./context/ToastContext";
+
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Cookies from "./pages/Cookies";
+import SecurityPage from "./pages/SecurityPage";
+import Support from "./pages/Support";
+import FAQ from "./pages/FAQ";
+import About from "./pages/About";
+import GoogleSheets from "./pages/GoogleSheets";
+
 import { getTeacherClasses, getTeacherProfile } from "./api/backendApi";
 import { fetchStudents, createSession, markPresent, finalizeDay, getAttendanceStatus } from "./services/api";
 import "./App.css";
 
 function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { showToast } = useToast();
+
   const [teacher, setTeacher] = useState(null);
   const [classes, setClasses] = useState([]);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [classError, setClassError] = useState("");
-  const [authView, setAuthView] = useState("login");
 
   const [className, setClassName] = useState("");
   const [students, setStudents] = useState([]);
@@ -27,6 +45,8 @@ function App() {
   const [attendanceSummary, setAttendanceSummary] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [showFinalizeModal, setShowFinalizeModal] = useState(false);
+  const [setupJustCompleted, setSetupJustCompleted] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -81,6 +101,8 @@ function App() {
       setLoadingClasses(true); setClassError("");
       const res = await getTeacherClasses(token);
       setClasses(res.classes || []);
+      showToast(`Welcome back, ${teacherData.name?.split(" ")[0]}!`, "success");
+      navigate("/dashboard");
     } catch (e) { setClassError(e.message); }
     finally { setLoadingClasses(false); }
   };
@@ -90,18 +112,25 @@ function App() {
     setTeacher(null); setClasses([]); setClassName(""); setStudents([]);
     setSession(null); setScannerOpen(false); setScanHistory([]);
     setFinalized(false); setAttendanceSummary(null); setMessage(""); setClassError("");
-    setAuthView("login");
+    showToast("Signed out successfully", "info");
+    navigate("/login");
   };
 
   const handleSetupComplete = (setupData) => {
+    const updatedTeacher = setupData?.teacher;
+
     setTeacher(prev => ({
-        ...prev,
-        setupCompleted: true
+        ...(prev || {}),
+        ...(updatedTeacher || {}),
+        setupCompleted: true,
+        googleConnected: true,
     }));
 
-    if (setupData?.teacher?.classes) {
-        setClasses(setupData.teacher.classes);
+    if (Array.isArray(updatedTeacher?.classes)) {
+        setClasses(updatedTeacher.classes);
     }
+
+    setSetupJustCompleted(true);
 };
 
   const handleClassChange = (e) => {
@@ -130,12 +159,17 @@ function App() {
       setFinalized(Boolean(statusRes.finalized));
       setSession(null); setScannerOpen(false); setScanHistory([]);
 
-      setMessage(statusRes.finalized
+      const msg = statusRes.finalized
         ? `Today's attendance is finalized. Present: ${statusRes.present}, Absent: ${statusRes.absent}.`
-        : `${formatted.length} students loaded. Present: ${statusRes.present}, Absent: ${statusRes.absent}, Pending: ${statusRes.pending}.`
-      );
-    } catch (e) { setMessage(`❌ ${e.message}`); }
-    finally { setLoading(false); }
+        : `${formatted.length} students loaded. Present: ${statusRes.present}, Absent: ${statusRes.absent}, Pending: ${statusRes.pending}.`;
+      setMessage(msg);
+      showToast(`${formatted.length} students loaded for ${className}`, "success");
+    } catch (e) {
+      setMessage(`❌ ${e.message}`);
+      showToast(e.message, "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleCreateSession() {
@@ -146,8 +180,13 @@ function App() {
       const res = await createSession(className);
       setSession(res.session);
       setMessage("Session created — you can now generate QR codes.");
-    } catch (e) { setMessage(`❌ ${e.message}`); }
-    finally { setLoading(false); }
+      showToast("Attendance session created successfully", "success");
+    } catch (e) {
+      setMessage(`❌ ${e.message}`);
+      showToast(e.message, "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleScan = useCallback(async (qrData) => {
@@ -170,96 +209,74 @@ function App() {
         { roll: res.student.roll, name: res.student.name, time: new Date().toLocaleTimeString() },
         ...prev,
       ]);
-      setMessage(`✅ Marked present — Roll ${res.student.roll}`);
+      const successMsg = `✅ Marked present — Roll ${res.student.roll}`;
+      setMessage(successMsg);
+      showToast(`Present: Roll ${res.student.roll} (${res.student.name || ""})`, "success");
       return res;
-    } catch (e) { setMessage(`❌ ${e.message}`); throw e; }
-  }, [className, session, finalized]);
+    } catch (e) {
+      setMessage(`❌ ${e.message}`);
+      showToast(e.message, "error");
+      throw e;
+    }
+  }, [className, session, finalized, showToast]);
 
-  async function handleFinalize() {
+  async function handleConfirmFinalize() {
     if (!session) { setMessage("Create a session first."); return; }
-    if (!window.confirm(`Finalize attendance?\n\nPresent: ${presentCount}\nPending: ${pendingCount}\n\nPending students will be marked absent.`)) return;
-
     try {
       setLoading(true); setMessage("");
       const res = await finalizeDay({ className, sessionId: session.sessionId });
       setFinalized(true); setScannerOpen(false);
       setStudents(prev => prev.map(s => ({ ...s, status: s.status === "PRESENT" ? "PRESENT" : "ABSENT" })));
       setAttendanceSummary(prev => prev ? { ...prev, present: res.present, absent: res.absent, pending: 0, finalized: true } : prev);
-      setMessage(`✅ Finalized. Present: ${res.present}, Absent: ${res.absent}`);
-    } catch (e) { setMessage(`❌ ${e.message}`); }
-    finally { setLoading(false); }
+      const finMsg = `✅ Finalized. Present: ${res.present}, Absent: ${res.absent}`;
+      setMessage(finMsg);
+      showToast(finMsg, "success");
+      setShowFinalizeModal(false);
+    } catch (e) {
+      setMessage(`❌ ${e.message}`);
+      showToast(e.message, "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  // ── Loading screen ──
   if (checkingAuth) {
     return (
       <div className="auth-loading">
         <div className="auth-loading-spinner" />
         <h2>Smart Attendance</h2>
-        <p>Checking your session...</p>
+        <p>Checking your session credentials...</p>
       </div>
     );
   }
 
-  // ── Login / Register ──
-  if (!teacher) {
-    if (authView === "register") {
-      return (
-        <Register
-          onRegister={(teacherData) => setTeacher(teacherData)}
-          onSwitchToLogin={() => setAuthView("login")}
-        />
-      );
+  const renderDashboard = () => {
+    if (!teacher) {
+      return <Login onLogin={handleLogin} onSwitchToRegister={() => navigate("/register")} />;
     }
-    return (
-      <Login
-        onLogin={handleLogin}
-        onSwitchToRegister={() => setAuthView("register")}
-      />
-    );
-  }
 
-  // ── Setup Required (new teachers with setupCompleted: false) ──
- if (teacher.setupCompleted === false) {
+    if (teacher.setupCompleted === false || setupJustCompleted) {
     return (
         <SetupPage
             teacher={teacher}
             onLogout={handleLogout}
             onSetupComplete={handleSetupComplete}
+            onGoToDashboard={() => {
+                setSetupJustCompleted(false);
+                navigate("/dashboard");
+            }}
         />
     );
 }
 
-  // ── Dashboard ──
-  return (
-    <div className="app">
-      <header className="header">
-        <div className="brand-area">
-          <div className="brand-icon">✓</div>
-          <div>
-            <h1>Smart Attendance</h1>
-            <p>QR-Based Attendance</p>
-          </div>
-        </div>
-        <div className="header-right">
-          <div className="teacher-mini">
-            <div className="teacher-avatar">{teacher.name?.charAt(0)?.toUpperCase()}</div>
-            <div>
-              <strong>{teacher.name}</strong>
-              <span>{teacher.teacherId}</span>
-            </div>
-          </div>
-          <button className="logout-button" onClick={handleLogout}>Logout</button>
-        </div>
-      </header>
-
+    return (
       <main className="dashboard-main">
         {/* Welcome */}
         <section className="welcome-section">
           <div>
             <p className="welcome-label">TEACHER DASHBOARD</p>
             <h2>Welcome back, {teacher.name?.split(" ")[0]} 👋</h2>
-            <p>Manage your classroom attendance quickly and securely.</p>
+            <p>Manage your classroom attendance quickly, accurately, and securely.</p>
           </div>
           <div className="today-card">
             <span>TODAY</span>
@@ -271,11 +288,11 @@ function App() {
         <section className="teacher-info-card">
           <div className="section-title">
             <div className="section-icon">👤</div>
-            <div><h3>Profile</h3><p>Your account details</p></div>
+            <div><h3>Active Session Profile</h3><p>Your institutional teacher profile</p></div>
           </div>
           <div className="teacher-details">
             <div><span>NAME</span><strong>{teacher.name}</strong></div>
-            <div><span>ID</span><strong>{teacher.teacherId}</strong></div>
+            <div><span>TEACHER ID</span><strong className="monospace-tag">{teacher.teacherId}</strong></div>
             <div><span>EMAIL</span><strong>{teacher.email}</strong></div>
             <div><span>LOGGED IN</span><strong>{teacher.lastLoginAt ? new Date(teacher.lastLoginAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : "Just now"}</strong></div>
           </div>
@@ -295,13 +312,13 @@ function App() {
           {!loadingClasses && !classError && (
             <div className="class-controls">
               <div className="select-wrapper">
-                <label>CLASS</label>
+                <label>ASSIGNED CLASS</label>
                 <select value={className} onChange={handleClassChange} disabled={loading}>
                   <option value="">Select a class</option>
                   {classes.map(c => <option value={c} key={c}>{c}</option>)}
                 </select>
               </div>
-              <button className="primary-button" onClick={handleGetStudents} disabled={loading || !className}>
+              <button className="btn btn-primary primary-button" onClick={handleGetStudents} disabled={loading || !className}>
                 {loading ? "Loading..." : "Load Students"}
               </button>
             </div>
@@ -335,7 +352,7 @@ function App() {
               <div className="progress-label-row">
                 <span>Attendance Progress</span>
                 <strong>
-                  {Math.round(((attendanceSummary?.present ?? presentCount) / (attendanceSummary?.total ?? students.length)) * 100) || 0}% Completed
+                  {Math.round(((attendanceSummary?.present ?? presentCount) / (attendanceSummary?.total ?? students.length)) * 100) || 0}% Verified
                 </strong>
               </div>
               <div className="attendance-progress-track">
@@ -364,7 +381,7 @@ function App() {
                   <h3>Ready to take attendance?</h3>
                   <p>Create a session, then generate personalized QR codes for students.</p>
                 </div>
-                <button className="primary-button" onClick={handleCreateSession} disabled={loading}>
+                <button className="btn btn-primary primary-button" onClick={handleCreateSession} disabled={loading}>
                   {loading ? "Creating..." : "Create Session"}
                 </button>
               </div>
@@ -373,7 +390,7 @@ function App() {
                 <div className="success-icon">✓</div>
                 <div>
                   <span className="session-status">SESSION ACTIVE</span>
-                  <h3>Session ready for {className}</h3>
+                  <h3>Session active for {className}</h3>
                   <p>Dispatch QR codes to student emails or launch camera scanner.</p>
                 </div>
               </div>
@@ -391,7 +408,10 @@ function App() {
             <QRGenerator
               students={students} className={className}
               date={session.date} sessionId={session.sessionId}
-              onComplete={() => setMessage("✅ QR codes dispatched successfully.")}
+              onComplete={() => {
+                setMessage("✅ QR codes dispatched successfully.");
+                showToast("All QR codes dispatched to student emails", "success");
+              }}
             />
           </section>
         )}
@@ -432,7 +452,7 @@ function App() {
         {/* Finalized banner */}
         {students.length > 0 && finalized && (
           <div className="success-message">
-            🔒 Attendance is finalized. Status below is from the sheet.
+            🔒 Attendance is finalized. Records are saved in your Google Sheet.
           </div>
         )}
 
@@ -475,13 +495,13 @@ function App() {
                   {filteredStudents.length === 0 ? (
                     <tr>
                       <td colSpan="4" className="empty-table-msg">
-                        No students match your filter search.
+                        No students match your search filter.
                       </td>
                     </tr>
                   ) : (
                     filteredStudents.map(s => (
                       <tr key={s.roll}>
-                        <td><strong>{s.roll}</strong></td>
+                        <td><strong className="monospace-tag">{s.roll}</strong></td>
                         <td>{s.name}</td>
                         <td className="email-cell">{s.email}</td>
                         <td>
@@ -527,9 +547,14 @@ function App() {
                 <div>
                   <span className="finalize-label">FINAL STEP</span>
                   <h3>Finish today's attendance</h3>
-                  <p>Pending students will be marked absent.</p>
+                  <p>Pending students will be marked absent in Google Sheets.</p>
                 </div>
-                <button className="danger-button" onClick={handleFinalize} disabled={loading}>
+                <button
+                  type="button"
+                  className="danger-button"
+                  onClick={() => setShowFinalizeModal(true)}
+                  disabled={loading}
+                >
                   {loading ? "Finalizing..." : "Submit & Mark Absent"}
                 </button>
               </>
@@ -537,19 +562,145 @@ function App() {
               <div className="finalized-content">
                 <div className="finalized-icon">🔒</div>
                 <div>
-                  <span>CLOSED</span>
+                  <span className="finalized-label">RECORD CLOSED</span>
                   <h3>Today's attendance is finalized</h3>
                 </div>
               </div>
             )}
           </section>
         )}
-      </main>
 
-      <footer className="footer">
-        <p>Smart Attendance System</p>
-        <span>Teacher: {teacher.teacherId}</span>
-      </footer>
+        {/* Finalize Confirmation Modal (replaces browser confirm) */}
+        <ConfirmModal
+          isOpen={showFinalizeModal}
+          onClose={() => setShowFinalizeModal(false)}
+          onConfirm={handleConfirmFinalize}
+          title="Finalize Today's Attendance?"
+          message={`Finalize attendance for ${className}?\nPresent: ${presentCount} • Pending: ${pendingCount}\n\nUnverified pending students will be automatically marked as absent in your Google Sheet.`}
+          confirmText="Submit & Mark Absent"
+          cancelText="Cancel"
+          isDestructive={true}
+          loading={loading}
+        />
+      </main>
+    );
+  };
+
+  return (
+    <div className="app-shell">
+      {/* Navigation Header */}
+      <header className="header">
+        <div className="brand-area" onClick={() => navigate("/")} role="button" tabIndex={0}>
+          <div className="brand-icon">✓</div>
+          <div>
+            <h1>Smart Attendance</h1>
+            <p>Google Sheets Attendance System</p>
+          </div>
+        </div>
+
+        <div className="header-right">
+          {teacher ? (
+            <>
+              <nav className="nav-links">
+                <Link
+                  to="/dashboard"
+                  className={
+                    location.pathname === "/dashboard" || location.pathname === "/"
+                      ? "nav-link active"
+                      : "nav-link"
+                  }
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/settings"
+                  className={location.pathname === "/settings" ? "nav-link active" : "nav-link"}
+                >
+                  Settings
+                </Link>
+              </nav>
+              <div className="teacher-mini">
+                <div className="teacher-avatar">{teacher.name?.charAt(0)?.toUpperCase()}</div>
+                <div>
+                  <strong>{teacher.name}</strong>
+                  <span>{teacher.teacherId}</span>
+                </div>
+              </div>
+              <button className="logout-button" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <div className="auth-nav-buttons">
+              <button
+                type="button"
+                className={`nav-auth-btn ${location.pathname === "/login" ? "active" : ""}`}
+                onClick={() => navigate("/login")}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                className={`nav-auth-btn ${location.pathname === "/register" ? "active" : ""}`}
+                onClick={() => navigate("/register")}
+              >
+                Create Account
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Route Views */}
+      <div className="route-content">
+        <Routes>
+          <Route path="/" element={renderDashboard()} />
+          <Route path="/dashboard" element={renderDashboard()} />
+          <Route
+            path="/login"
+            element={
+              teacher ? (
+                renderDashboard()
+              ) : (
+                <Login onLogin={handleLogin} onSwitchToRegister={() => navigate("/register")} />
+              )
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              teacher ? (
+                renderDashboard()
+              ) : (
+                <Register onRegister={(t) => { setTeacher(t); navigate("/dashboard"); }} onSwitchToLogin={() => navigate("/login")} />
+              )
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              teacher ? (
+                <Settings user={teacher} onDisconnectAddon={() => setTeacher(prev => prev ? { ...prev, googleConnected: false, setupCompleted: false } : null)} />
+              ) : (
+                <Login onLogin={handleLogin} onSwitchToRegister={() => navigate("/register")} />
+              )
+            }
+          />
+
+          {/* Public Legal & Documentation Pages */}
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/security" element={<SecurityPage />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/google-sheets" element={<GoogleSheets />} />
+        </Routes>
+      </div>
+
+      {/* Site Footer */}
+      <Footer />
     </div>
   );
 }

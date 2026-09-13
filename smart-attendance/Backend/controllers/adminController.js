@@ -7,8 +7,7 @@ const createTeacher = async (req, res) => {
             teacherId,
             name,
             email,
-            password,
-            appsScriptUrl
+            password
         } = req.body;
 
         // Check required fields
@@ -16,8 +15,7 @@ const createTeacher = async (req, res) => {
             !teacherId ||
             !name ||
             !email ||
-            !password ||
-            !appsScriptUrl
+            !password
         ) {
             return res.status(400).json({
                 status: "error",
@@ -55,8 +53,7 @@ const createTeacher = async (req, res) => {
             teacherId,
             name,
             email,
-            passwordHash,
-            appsScriptUrl
+            passwordHash
         });
 
         return res.status(201).json({
@@ -66,7 +63,6 @@ const createTeacher = async (req, res) => {
                 teacherId: teacher.teacherId,
                 name: teacher.name,
                 email: teacher.email,
-                appsScriptUrl: teacher.appsScriptUrl,
                 role: teacher.role,
                 status: teacher.status
             }

@@ -2,16 +2,19 @@ const express = require("express");
 
 const {
     getClasses,
-    attendanceAction,
     generatePairingCode,
     pairAddon
 } = require("../controllers/teacherController");
+
 const {
     getTeacherAddonStatus,
     createAttendanceCommand,
-    getAttendanceCommandResult
+    getAttendanceCommandResult,
+    disconnectFromWebsite
 } = require("../controllers/addonController");
+
 const protect = require("../middleware/authMiddleware");
+const { pairingLimiter } = require("../middleware/rateLimiter");
 
 const router = express.Router();
 
@@ -24,18 +27,11 @@ router.get(
 );
 
 
-// Attendance actions
-router.post(
-    "/attendance",
-    protect,
-    attendanceAction
-);
-
-
 // Generate Google Sheets Add-on pairing code
 router.post(
     "/addon/generate-pairing-code",
     protect,
+    pairingLimiter,
     generatePairingCode
 );
 
@@ -43,6 +39,7 @@ router.post(
 // Pair Google Sheets Add-on
 router.post(
     "/addon/pair",
+    pairingLimiter,
     pairAddon
 );
 
@@ -52,6 +49,14 @@ router.get(
     "/addon/status",
     protect,
     getTeacherAddonStatus
+);
+
+
+// Disconnect Google Sheet from website
+router.post(
+    "/addon/disconnect",
+    protect,
+    disconnectFromWebsite
 );
 
 

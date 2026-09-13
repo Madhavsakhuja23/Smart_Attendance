@@ -75,10 +75,12 @@ function onOpen(e) {
     )
 
     .addSeparator()
+
     .addItem(
-  "Connect Smart Attendance",
-  "pairWithSmartAttendance"
-)
+      "Connect Smart Attendance",
+      "pairWithSmartAttendance"
+    )
+
     .addItem(
       "Check Connection",
       "showConnectionStatus"
@@ -88,27 +90,6 @@ function onOpen(e) {
       "Sync Classes",
       "syncClasses"
     )
-
-    .addSeparator()
-
-    .addItem(
-      "Test Get Classes",
-      "testGetClasses"
-    )
-
-    .addItem(
-      "Test Fetch Students",
-      "testFetchStudents"
-    )
-
-    .addItem("Test Create Session", "testCreateSession")
-.addItem("Test Verify and Mark Present", "testVerifyAndMarkPresent")
-.addItem("Test Attendance Status", "testAttendanceStatus")
-.addItem("Test Finalize Day", "testFinalizeDay")
-.addItem(
-  "Test Command Bridge",
-  "testCommandBridge"
-)
 
     .addSeparator()
 

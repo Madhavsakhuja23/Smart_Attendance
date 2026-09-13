@@ -29,18 +29,7 @@ const teacherSchema = new mongoose.Schema(
         },
 
         // ==========================================
-        // OLD APPS SCRIPT CONNECTION
-        // Keep temporarily during migration
-        // ==========================================
-        appsScriptUrl: {
-            type: String,
-            required: false,
-            default: null,
-            trim: true
-        },
-
-        // ==========================================
-        // NEW GOOGLE SHEETS ADD-ON CONNECTION
+        // GOOGLE SHEETS ADD-ON CONNECTION
         // ==========================================
 
         googleEmail: {
@@ -69,6 +58,7 @@ const teacherSchema = new mongoose.Schema(
             default: null,
             trim: true
         },
+
         connectedClasses: {
             type: [String],
             default: []
@@ -134,5 +124,9 @@ const teacherSchema = new mongoose.Schema(
         timestamps: true
     }
 );
+
+// Indexes for fast lookup during add-on auth and pairing
+teacherSchema.index({ connectionTokenHash: 1 });
+teacherSchema.index({ pairingCodeHash: 1 });
 
 module.exports = mongoose.model("Teacher", teacherSchema);
