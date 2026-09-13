@@ -354,7 +354,7 @@ export async function getAddonConnectionStatus() {
 // ATTENDANCE COMMAND BRIDGE
 // =========================================================
 
-async function createAttendanceCommand(type, payload = {}) {
+export async function createAttendanceCommand(type, payload = {}) {
     const token = sessionStorage.getItem("token");
 
     const response = await fetch(
