@@ -15,7 +15,7 @@ export default function Support() {
                 <section>
                     <h2>Contact Information</h2>
                     <div className="support-card" style={{ padding: "20px", background: "rgba(255,255,255,0.05)", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)", marginTop: "15px" }}>
-                        <p><strong>Support Email:</strong> support@smartattendance.app</p>
+                        <p><strong>Support Email:</strong> msakhuja22@gmail.com </p>
                         <p><strong>Operating Hours:</strong> Monday – Friday, 9:00 AM – 6:00 PM (IST)</p>
                         <p><strong>Response Time:</strong> Within 24 business hours</p>
                     </div>
