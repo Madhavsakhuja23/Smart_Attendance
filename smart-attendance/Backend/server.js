@@ -40,7 +40,7 @@ const FRONTEND_URL =
 const isProduction = process.env.NODE_ENV === "production";
 
 const allowedOrigins = isProduction
-    ? [FRONTEND_URL]
+    ? [FRONTEND_URL,"https://www.smartattendancesystem.in"]
     : [
         "http://localhost:5173",
         "http://localhost:5174",
