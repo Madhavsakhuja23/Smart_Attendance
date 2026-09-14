@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import BrandLogo from "./BrandLogo";
 
 import {
@@ -434,18 +435,16 @@ const checkConnection = async () => {
                                     </h4>
 
                                     <p>
-                                        Install the Smart Attendance
-                                        Google Sheets Add-on.
+                                        Install and launch the Smart Attendance System
+                                        Add-on inside your Google Sheet.
                                     </p>
 
-                                    <a
-                                        href="https://workspace.google.com/marketplace/"
-                                        target="_blank"
-                                        rel="noreferrer"
+                                    <Link
+                                        to="/google-sheets"
                                         className="setup-action-button"
                                     >
-                                        Install Add-on
-                                    </a>
+                                        View Add-on Guide
+                                    </Link>
 
                                 </div>
 
