@@ -35,12 +35,12 @@ app.use(helmet({
 
 const FRONTEND_URL =
     process.env.FRONTEND_URL ||
-    "https://smart-attendance-cu.vercel.app";
+    "https://www.smartattendancesystem.in";
 
 const isProduction = process.env.NODE_ENV === "production";
 
 const allowedOrigins = isProduction
-    ? [FRONTEND_URL,"https://www.smartattendancesystem.in"]
+    ? [FRONTEND_URL, "https://www.smartattendancesystem.in", "https://smartattendancesystem.in"]
     : [
         "http://localhost:5173",
         "http://localhost:5174",
