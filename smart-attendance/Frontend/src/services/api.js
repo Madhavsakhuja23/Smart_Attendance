@@ -1,4 +1,4 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+import { BACKEND_URL } from "../config";
 
 // =========================================================
 // FETCH STUDENTS
@@ -14,7 +14,8 @@ export async function fetchStudents(className) {
         );
 
     return await waitForAttendanceCommand(
-        commandId
+        commandId,
+        { timeout: 30000 }
     );
 }
 
@@ -293,12 +294,15 @@ export async function createAttendanceCommand(type, payload = {}) {
 // =========================================================
 
 async function waitForAttendanceCommand(
-    commandId
+    commandId,
+    options = {}
 ) {
     const token =
         sessionStorage.getItem("token");
 
-    const maxAttempts = 60;
+    const pollInterval = options.interval || 2000;
+    const timeoutMs = options.timeout || 120000;
+    const maxAttempts = Math.ceil(timeoutMs / pollInterval);
 
     for (
         let attempt = 0;
@@ -347,7 +351,7 @@ async function waitForAttendanceCommand(
         // Still PENDING / PROCESSING
         await new Promise(
             resolve =>
-                setTimeout(resolve, 2000)
+                setTimeout(resolve, pollInterval)
         );
     }
 

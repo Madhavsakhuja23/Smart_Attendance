@@ -1,4 +1,4 @@
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+import { BACKEND_URL } from "../config";
 
 const DEFAULT_TIMEOUT = 15000; // 15 seconds
 

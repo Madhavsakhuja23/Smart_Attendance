@@ -62,12 +62,18 @@ function App() {
       try {
         setLoadingClasses(true);
         setClassError("");
-        const [profile, classesRes] = await Promise.all([
-          getTeacherProfile(token),
-          getTeacherClasses(token),
-        ]);
+        const profile = await getTeacherProfile(token);
         setTeacher(profile.teacher);
-        setClasses(classesRes.classes || []);
+        if (profile.teacher?.googleConnected) {
+          try {
+            const classesRes = await getTeacherClasses(token);
+            setClasses(classesRes.classes || []);
+          } catch {
+            setClasses([]);
+          }
+        } else {
+          setClasses([]);
+        }
       } catch {
         sessionStorage.removeItem("token");
         setTeacher(null);
@@ -105,12 +111,19 @@ function App() {
     if (!token) { setClassError("Login token not found."); return; }
     try {
       setLoadingClasses(true); setClassError("");
-      const res = await getTeacherClasses(token);
-      setClasses(res.classes || []);
+      if (teacherData?.googleConnected) {
+        try {
+          const res = await getTeacherClasses(token);
+          setClasses(res.classes || []);
+        } catch (e) {
+          setClassError(e.message);
+        }
+      } else {
+        setClasses([]);
+      }
       showToast(`Welcome back, ${teacherData.name?.split(" ")[0]}!`, "success");
       navigate("/dashboard");
-    } catch (e) { setClassError(e.message); }
-    finally { setLoadingClasses(false); }
+    } finally { setLoadingClasses(false); }
   };
 
   const handleLogout = () => {

@@ -1,9 +1,23 @@
+import { SMART_ATTENDANCE_ADDON_URL } from "../config";
+
 export default function GoogleSheets() {
     return (
         <div className="legal-page">
             <div className="legal-container">
                 <h1>Smart Attendance System for Google Sheets™</h1>
                 <p className="subtitle">Learn how Smart Attendance System integrates with your Google Spreadsheets.</p>
+
+                <div style={{ marginTop: "20px", marginBottom: "30px" }}>
+                    <a
+                        href={SMART_ATTENDANCE_ADDON_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-primary"
+                        style={{ display: "inline-block", padding: "12px 24px", borderRadius: "8px", textDecoration: "none" }}
+                    >
+                        Install Add-on from Google Workspace Marketplace ↗
+                    </a>
+                </div>
 
                 <section style={{ marginTop: "25px" }}>
                     <h2>How the Add-on Integration Works</h2>

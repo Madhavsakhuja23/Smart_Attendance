@@ -8,6 +8,7 @@ import {
     createAttendanceCommand,
     getAttendanceCommandResult
 } from "../services/api";
+import { SMART_ATTENDANCE_ADDON_URL } from "../config";
 
 
 export default function SetupPage({
@@ -439,12 +440,14 @@ const checkConnection = async () => {
                                         Add-on inside your Google Sheet.
                                     </p>
 
-                                    <Link
-                                        to="/google-sheets"
+                                    <a
+                                        href={SMART_ATTENDANCE_ADDON_URL}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         className="setup-action-button"
                                     >
-                                        View Add-on Guide
-                                    </Link>
+                                        Install Smart Attendance Add-on
+                                    </a>
 
                                 </div>
 

@@ -10,7 +10,10 @@ const getAddonStatus = async (req, res) => {
 
         return res.status(200).json({
             status: "success",
-            connected: true,
+            connected: Boolean(
+                teacher.googleConnected &&
+                teacher.connectedSpreadsheetId
+            ),
 
             teacher: {
                 teacherId: teacher.teacherId,
@@ -144,6 +147,23 @@ const getNextAddonCommand = async (req, res) => {
     try {
 
         const teacher = req.teacher;
+
+        // Recover stuck PROCESSING commands (Add-on crash / sidebar close)
+        await AttendanceCommand.updateMany(
+            {
+                teacherId: teacher.teacherId,
+                spreadsheetId: teacher.connectedSpreadsheetId,
+                status: "PROCESSING",
+                updatedAt: { $lt: new Date(Date.now() - 5 * 60 * 1000) }
+            },
+            {
+                $set: {
+                    status: "FAILED",
+                    errorMessage: "Command timed out during processing.",
+                    processedAt: new Date()
+                }
+            }
+        );
 
         const command =
             await AttendanceCommand.findOneAndUpdate(
