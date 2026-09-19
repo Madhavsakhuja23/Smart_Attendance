@@ -8,7 +8,7 @@ import {
     createAttendanceCommand,
     getAttendanceCommandResult
 } from "../services/api";
-import { SMART_ATTENDANCE_ADDON_URL } from "../config";
+import { SMART_ATTENDANCE_ADDON_URL, YOUTUBE_TUTORIAL_URL } from "../config";
 
 
 export default function SetupPage({
@@ -440,14 +440,25 @@ const checkConnection = async () => {
                                         Add-on inside your Google Sheet.
                                     </p>
 
-                                    <a
-                                        href={SMART_ATTENDANCE_ADDON_URL}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="setup-action-button"
-                                    >
-                                        Install Smart Attendance Add-on
-                                    </a>
+                                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "10px" }}>
+                                        <a
+                                            href={SMART_ATTENDANCE_ADDON_URL}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="setup-action-button"
+                                        >
+                                            Install Smart Attendance Add-on
+                                        </a>
+                                        <a
+                                            href={YOUTUBE_TUTORIAL_URL}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="setup-action-button"
+                                            style={{ backgroundColor: "#cc0000", borderColor: "#cc0000", color: "#fff" }}
+                                        >
+                                            ▶ Watch Video Tutorial
+                                        </a>
+                                    </div>
 
                                 </div>
 
@@ -617,6 +628,24 @@ const checkConnection = async () => {
                                 above. Once connected, return here
                                 and click "Check Connection".
                             </p>
+
+                            <div style={{ marginTop: "12px" }}>
+                                <a
+                                    href={YOUTUBE_TUTORIAL_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                        color: "#cc0000",
+                                        fontWeight: "600",
+                                        textDecoration: "none"
+                                    }}
+                                >
+                                    ▶ Need help? Watch the YouTube Setup Tutorial
+                                </a>
+                            </div>
 
                         </div>
 
